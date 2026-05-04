@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake News Detection System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🔍 Fake News Detection System</h1>
+        </header>
+
+        <main class="main-content">
+            <section class="input-section">
+                <form id="predictionForm" class="prediction-form">
+                    <div class="form-group">
+                        <label for="newsText">Enter News Article:</label>
+                        <textarea 
+                            id="newsText" 
+                            name="newsText" 
+                            rows="8" 
+                            placeholder="Paste the news article text here for analysis..."
+                            required
+                        ></textarea>
+                        <div class="char-count">
+                            <span id="charCount">0</span> characters
+                        </div>
+                    </div>
+                    <button type="submit" class="analyze-btn" id="analyzeBtn">
+                        <span class="btn-text">Analyze News</span>
+                        <span class="btn-loading" style="display: none;">Analyzing...</span>
+                    </button>
+                </form>
+            </section>
+
+            <section class="result-section" id="resultSection" style="display: none;">
+                <h2>Analysis Results</h2>
+                <div class="result-card" id="resultCard">
+                    <div class="result-header">
+                        <span class="result-label" id="resultLabel"></span>
+                        <span class="confidence-badge" id="confidenceBadge"></span>
+                    </div>
+                    <div class="result-details">
+                        <div class="probability-bars">
+                            <div class="prob-item">
+                                <span class="prob-label">Fake News</span>
+                                <div class="prob-bar-container">
+                                    <div class="prob-bar fake-bar" id="fakeBar"></div>
+                                </div>
+                                <span class="prob-value" id="fakeProb"></span>
+                            </div>
+                            <div class="prob-item">
+                                <span class="prob-label">Real News</span>
+                                <div class="prob-bar-container">
+                                    <div class="prob-bar real-bar" id="realBar"></div>
+                                </div>
+                                <span class="prob-value" id="realProb"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Explanation Section -->
+                    <div class="explanation-section" id="explanationSection">
+                        <h3>🔍 Why This Classification?</h3>
+                        <div class="explanation-content" id="explanationContent">
+                            <!-- Explanation will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="examples-section">
+                <h2>Example Analyses</h2>
+                <div class="example-cards">
+                    <div class="example-card fake-example">
+                        <h3>🚨 Fake News Example</h3>
+                        <p class="example-text">"Celebrity reveals shocking secret cure that doctors don't want you to know"</p>
+                        <div class="example-reasons">
+                            <h4>Why it's detected as Fake:</h4>
+                            <ul>
+                                <li>Clickbait words: "shocking", "secret"</li>
+                                <li>No evidence or data</li>
+                                <li>Targets emotions</li>
+                                <li>Unverifiable claims</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="example-card real-example">
+                        <h3>✅ Real News Example</h3>
+                        <p class="example-text">"Scientists discover new breakthrough in cancer treatment research shows promising results"</p>
+                        <div class="example-reasons">
+                            <h4>Why it's detected as Real:</h4>
+                            <ul>
+                                <li>Factual and specific language</li>
+                                <li>References to scientific research</li>
+                                <li>No emotional manipulation</li>
+                                <li>Verifiable information</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="info-section">
+                <h2>About This System</h2>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <h3>🧠 Machine Learning</h3>
+                        <p>Uses advanced algorithms including Logistic Regression and Naive Bayes to analyze text patterns.</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>📊 Natural Language Processing</h3>
+                        <p>Employs NLP techniques for text preprocessing, tokenization, and feature extraction.</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>🎯 TF-IDF Features</h3>
+                        <p>Extracts meaningful features using Term Frequency-Inverse Document Frequency.</p>
+                    </div>
+                    <div class="info-card">
+                        <h3>📈 High Accuracy</h3>
+                        <p>Achieves reliable performance with comprehensive evaluation metrics.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2026 Fake News Detection System. All Rights Reserved.</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
