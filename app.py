@@ -37,9 +37,6 @@ def initialize_model():
         detector = None
         preprocessor = TextPreprocessor()
 
-# Initialize model at startup
-initialize_model()
-
 def fallback_predict(text):
    
     text_lower = text.lower()
@@ -142,10 +139,6 @@ def not_found(error):
 @app.errorhandler(500)
 def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
-
-# Vercel serverless function handler
-def handler(environ, start_response):
-    return app(environ, start_response)
 
 if __name__ == '__main__':
     print("Starting Fake News Detection System...")

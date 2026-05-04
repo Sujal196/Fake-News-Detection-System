@@ -8,17 +8,12 @@ from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 
-def download_nltk_data():
-    try:
-        nltk.download('punkt', quiet=True)
-        nltk.download('stopwords', quiet=True)
-        nltk.download('wordnet', quiet=True)
-    except Exception as e:
-        print(f"NLTK download error: {e}")
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
 
 class TextPreprocessor:
     def __init__(self):
-        download_nltk_data()
         self.lemmatizer = WordNetLemmatizer()
         self.stop_words = set(stopwords.words('english'))
         
