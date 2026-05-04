@@ -2,19 +2,20 @@
   "version": 2,
   "builds": [
     {
-      "src": "app.py",
+      "src": "api/index.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "app.py"
+      "dest": "api/index.py"
     }
   ],
   "functions": {
-    "app.py": {
-      "maxDuration": 30
+    "api/index.py": {
+      "maxDuration": 30,
+      "runtime": "python3.9"
     }
   }
 }

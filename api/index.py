@@ -1,10 +1,10 @@
-from flask import Flask, render_template, request, jsonify
-import os
-import pickle
 import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from flask import Flask, request, jsonify
 from data_preprocessing import TextPreprocessor
 from ml_models import FakeNewsDetector
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
 
@@ -15,7 +15,6 @@ def initialize_model():
     global detector, preprocessor
     
     try:
-        
         model_path = 'models/best_model.pkl'
         vectorizer_path = 'models/vectorizer.pkl'
         
@@ -24,24 +23,18 @@ def initialize_model():
             detector = FakeNewsDetector()
             detector.load_model(model_path, vectorizer_path)
         else:
-            print("No pre-trained model found. Training new model...")
-            from ml_models import train_and_evaluate_models
-            detector = train_and_evaluate_models()
+            print("No pre-trained model found. Using fallback only.")
+            detector = None
         
         preprocessor = TextPreprocessor()
         print("Model initialized successfully!")
         
     except Exception as e:
         print(f"Error initializing model: {e}")
-     
         detector = None
         preprocessor = TextPreprocessor()
 
-# Initialize model at startup
-initialize_model()
-
 def fallback_predict(text):
-   
     text_lower = text.lower()
     
     fake_indicators = [
@@ -79,7 +72,13 @@ def fallback_predict(text):
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return jsonify({
+        'message': 'Fake News Detection API',
+        'endpoints': {
+            'predict': 'POST /predict - Analyze text for fake news',
+            'health': 'GET /health - Check API status'
+        }
+    })
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -92,7 +91,6 @@ def predict():
         
         if len(text) < 10:
             return jsonify({'error': 'Text too short for accurate analysis'}), 400
-        
         
         if detector and preprocessor:
             result = detector.predict(text)
@@ -113,51 +111,9 @@ def health_check():
         'preprocessor_loaded': preprocessor is not None
     })
 
-@app.route('/about')
-def about():
-    return jsonify({
-        'system': 'Fake News Detection System',
-        'version': '1.0.0',
-        'technologies': [
-            'Machine Learning (Logistic Regression, Naive Bayes)',
-            'Natural Language Processing',
-            'TF-IDF Feature Extraction',
-            'Flask Web Framework',
-            'HTML/CSS/JavaScript'
-        ],
-        'features': [
-            'Text preprocessing and cleaning',
-            'Stop word removal and lemmatization',
-            'Feature extraction using TF-IDF',
-            'Multiple classification algorithms',
-            'Performance evaluation metrics',
-            'Web-based user interface'
-        ]
-    })
+# Initialize model on import
+initialize_model()
 
-@app.errorhandler(404)
-def not_found(error):
-    return jsonify({'error': 'Endpoint not found'}), 404
-
-@app.errorhandler(500)
-def internal_error(error):
-    return jsonify({'error': 'Internal server error'}), 500
-
-# Vercel serverless function handler
+# Vercel serverless handler
 def handler(environ, start_response):
     return app(environ, start_response)
-
-if __name__ == '__main__':
-    print("Starting Fake News Detection System...")
-    
-   
-    initialize_model()
-    
-    
-    if not os.path.exists('models'):
-        os.makedirs('models')
-    
-    print("Starting Flask server...")
-    print("Access the application at: http://localhost:5000")
-    
-    app.run(debug=True, host='0.0.0.0', port=5000)
