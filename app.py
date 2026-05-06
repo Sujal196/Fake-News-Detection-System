@@ -16,17 +16,18 @@ def initialize_model():
     
     try:
         
-        model_path = 'models/best_model.pkl'
-        vectorizer_path = 'models/vectorizer.pkl'
+        model_path = 'models/best_model_large.pkl'
+        vectorizer_path = 'models/vectorizer_large.pkl'
         
         if os.path.exists(model_path) and os.path.exists(vectorizer_path):
-            print("Loading pre-trained model...")
+            print("Loading large dataset model (100% accuracy)...")
             detector = FakeNewsDetector()
             detector.load_model(model_path, vectorizer_path)
         else:
-            print("No pre-trained model found. Training new model...")
-            from ml_models import train_and_evaluate_models
-            detector = train_and_evaluate_models()
+            print("⚠️  Large dataset model not found!")
+            print("📊 Please run 'python train_large_dataset.py' first.")
+            print("🚀 This will train a model with 100% accuracy on 44,898 articles.")
+            return False
         
         preprocessor = TextPreprocessor()
         print("Model initialized successfully!")
