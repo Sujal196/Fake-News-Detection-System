@@ -16,8 +16,8 @@ def initialize_model():
     
     try:
         
-        model_path = 'models/best_model_large.pkl'
-        vectorizer_path = 'models/vectorizer_large.pkl'
+        model_path = 'models/final_model.pkl'
+        vectorizer_path = 'models/final_vectorizer.pkl'
         
         if os.path.exists(model_path) and os.path.exists(vectorizer_path):
             print("Loading large dataset model (100% accuracy)...")

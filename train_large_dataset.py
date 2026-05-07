@@ -44,14 +44,14 @@ class AdvancedFakeNewsTrainer:
         # Load fake news dataset
         print(f"Loading {fake_file}...")
         fake_df = pd.read_csv(fake_file)
-        fake_df['label'] = 1  # 1 = Real News (FAKE.CSV contains fake news)
+        fake_df['label'] = 0  # 0 = Fake News
         fake_df['source'] = 'Fake.csv'
         print(f"✅ Fake news loaded: {len(fake_df):,} articles")
         
         # Load real news dataset
         print(f"Loading {true_file}...")
         true_df = pd.read_csv(true_file)
-        true_df['label'] = 0  # 0 = Fake News (TRUE.CSV contains real news)
+        true_df['label'] = 1  # 1 = Real News
         true_df['source'] = 'True.csv'
         print(f"✅ Real news loaded: {len(true_df):,} articles")
         
