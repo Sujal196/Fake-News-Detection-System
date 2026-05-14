@@ -1,308 +1,269 @@
 // DOM Elements
-const predictionForm = document.getElementById('predictionForm');
-const newsText = document.getElementById('newsText');
+const form = document.getElementById('predictionForm');
+const textArea = document.getElementById('newsText');
 const charCount = document.getElementById('charCount');
-const analyzeBtn = document.getElementById('analyzeBtn');
+const charDot = document.getElementById('charDot');
+const btnLoading = document.getElementById('btnLoading');
+const btnText = document.getElementById('btnText');
+const submitBtn = document.getElementById('analyzeBtn');
 const resultSection = document.getElementById('resultSection');
-const resultLabel = document.getElementById('resultLabel');
-const confidenceBadge = document.getElementById('confidenceBadge');
+const rGlow = document.getElementById('rGlow');
+const verdictIcon = document.getElementById('verdictIcon');
+const verdictLabel = document.getElementById('verdictLabel');
+const ringProg = document.getElementById('ringProg');
+const ringPct = document.getElementById('ringPct');
 const fakeBar = document.getElementById('fakeBar');
 const realBar = document.getElementById('realBar');
-const fakeProb = document.getElementById('fakeProb');
-const realProb = document.getElementById('realProb');
+const fakePct = document.getElementById('fakePct');
+const realPct = document.getElementById('realPct');
+const explainContent = document.getElementById('explainContent');
+const navbar = document.getElementById('navbar');
 
-// Character counter
-newsText.addEventListener('input', () => {
-    const count = newsText.value.length;
-    charCount.textContent = count;
-    
-    // Change color based on length
-    if (count < 50) {
-        charCount.style.color = '#e53e3e';
-    } else if (count < 100) {
-        charCount.style.color = '#ed8936';
+// Theme Toggle
+const root = document.documentElement;
+const savedTheme = localStorage.getItem('theme');
+
+if (savedTheme) {
+    root.setAttribute('data-theme', savedTheme);
+} else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+    root.setAttribute('data-theme', 'light');
+} else {
+    root.setAttribute('data-theme', 'dark');
+}
+
+document.querySelectorAll('.theme-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const currentTheme = root.getAttribute('data-theme') || 'dark';
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        root.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+    });
+});
+
+// Navbar Scroll
+window.addEventListener('scroll', () => {
+    if (window.scrollY > 50) {
+        navbar.classList.add('scrolled');
     } else {
-        charCount.style.color = '#48bb78';
+        navbar.classList.remove('scrolled');
     }
 });
 
-// Form submission
-predictionForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
+// Character Counter & Validation
+textArea.addEventListener('input', function() {
+    const len = this.value.length;
+    charCount.textContent = len;
     
-    const text = newsText.value.trim();
-    
-    if (!text) {
-        showNotification('Please enter some text to analyze', 'error');
-        return;
+    charDot.className = 'char-dot';
+    if (len >= 50) {
+        charDot.classList.add('valid');
+    } else if (len >= 10) {
+        charDot.classList.add('warn');
     }
+    
+    // Auto-resize
+    this.style.height = 'auto';
+    this.style.height = (this.scrollHeight) + 'px';
+});
+
+// Example Tags
+document.querySelectorAll('.ex-tag').forEach(tag => {
+    tag.addEventListener('click', () => {
+        const type = tag.dataset.example;
+        if (type === 'fake') {
+            textArea.value = "SHOCKING: Secret cure doctors don't want you to know! This miracle pill cures all diseases overnight. Big pharma conspiracy revealed as alien technology is found in vaccines.";
+        } else {
+            textArea.value = "Scientists at Harvard University published a new peer-reviewed study in the Journal of Medicine showing clinical trial results with 85 percent improvement in patient outcomes after the new treatment protocol.";
+        }
+        textArea.dispatchEvent(new Event('input'));
+    });
+});
+
+// Form Submission
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = textArea.value.trim();
     
     if (text.length < 10) {
-        showNotification('Please enter at least 10 characters for accurate analysis', 'error');
+        showToast('Please enter at least 10 characters for accurate analysis.', 'error');
         return;
     }
     
-    await analyzeNews(text);
-});
-
-// Analyze news function
-async function analyzeNews(text) {
-    // Show loading state
-    setLoadingState(true);
+    setLoading(true);
     
     try {
         const response = await fetch('/predict', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ text: text })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
         });
         
-        if (!response.ok) {
-            throw new Error('Analysis failed');
-        }
+        if (!response.ok) throw new Error('Analysis failed');
         
-        const result = await response.json();
-        displayResult(result);
+        const data = await response.json();
+        renderResult(data);
         
-    } catch (error) {
-        console.error('Error:', error);
-        showNotification('Failed to analyze text. Please try again.', 'error');
+    } catch (err) {
+        console.error(err);
+        showToast('Failed to connect to the AI engine. Please try again.', 'error');
     } finally {
-        setLoadingState(false);
+        setLoading(false);
     }
-}
+});
 
-// Display result
-function displayResult(result) {
-    const { prediction, confidence, probabilities, explanation } = result;
-    
-    // Set result label and style
-    resultLabel.textContent = prediction;
-    resultLabel.className = 'result-label ' + (prediction === 'Fake News' ? 'fake' : 'real');
-    
-    // Set confidence
-    confidenceBadge.textContent = `Confidence: ${(confidence * 100).toFixed(1)}%`;
-    
-    // Set probability bars and values
-    const fakeProbValue = probabilities['Fake News'] * 100;
-    const realProbValue = probabilities['Real News'] * 100;
-    
-    fakeBar.style.width = fakeProbValue + '%';
-    realBar.style.width = realProbValue + '%';
-    
-    fakeProb.textContent = fakeProbValue.toFixed(1) + '%';
-    realProb.textContent = realProbValue.toFixed(1) + '%';
-    
-    // Display explanation
-    displayExplanation(prediction, explanation);
-    
-    // Show result section with animation
-    resultSection.style.display = 'block';
-    resultSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    
-    // Add entrance animation
-    resultSection.style.animation = 'none';
-    setTimeout(() => {
-        resultSection.style.animation = 'slideIn 0.5s ease-out';
-    }, 10);
-}
-
-// Display explanation
-function displayExplanation(prediction, explanation) {
-    const explanationSection = document.getElementById('explanationSection');
-    const explanationContent = document.getElementById('explanationContent');
-    
-    // Set explanation content with proper formatting
-    explanationContent.innerHTML = formatExplanation(explanation);
-    
-    // Add appropriate class based on prediction
-    explanationContent.className = 'explanation-content ' + (prediction === 'Fake News' ? 'fake-news' : 'real-news');
-    
-    // Show the explanation section
-    explanationSection.style.display = 'block';
-}
-
-// Format explanation text for better display
-function formatExplanation(explanation) {
-    // Convert newlines to paragraphs
-    let formatted = explanation.replace(/\n\n/g, '</p><p>');
-    
-    // Handle single newlines
-    formatted = formatted.replace(/\n/g, '<br>');
-    
-    // Wrap in paragraphs
-    if (!formatted.startsWith('<p>')) {
-        formatted = '<p>' + formatted + '</p>';
-    }
-    
-    // Convert markdown-style bold to HTML
-    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    
-    // Convert emoji indicators to keep them
-    formatted = formatted.replace(/📊|🏛️|📈|📝|✅|⚠️|🚨|🕵️|❓|😮|📰|❌/g, (match) => match);
-    
-    return formatted;
-}
-
-// Set loading state
-function setLoadingState(isLoading) {
+// Loading State
+function setLoading(isLoading) {
+    submitBtn.disabled = isLoading;
     if (isLoading) {
-        analyzeBtn.disabled = true;
-        analyzeBtn.querySelector('.btn-text').style.display = 'none';
-        analyzeBtn.querySelector('.btn-loading').style.display = 'inline-flex';
+        btnText.style.display = 'none';
+        btnLoading.style.display = 'flex';
+        btnLoading.style.alignItems = 'center';
+        btnLoading.style.gap = '8px';
     } else {
-        analyzeBtn.disabled = false;
-        analyzeBtn.querySelector('.btn-text').style.display = 'inline';
-        analyzeBtn.querySelector('.btn-loading').style.display = 'none';
+        btnText.style.display = 'flex';
+        btnLoading.style.display = 'none';
     }
 }
 
-// Show notification (simple implementation)
-function showNotification(message, type = 'info') {
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
+// Render Results
+function renderResult(data) {
+    const { prediction, confidence, probabilities, explanation } = data;
+    const isFake = prediction === 'Fake News';
+    const confPct = Math.round(confidence * 100);
+    const fPct = (probabilities['Fake News'] * 100).toFixed(1);
+    const rPct = (probabilities['Real News'] * 100).toFixed(1);
     
-    // Add styles
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 15px 20px;
-        border-radius: 10px;
-        color: white;
-        font-weight: 500;
-        z-index: 1000;
-        animation: slideInRight 0.3s ease-out;
-        max-width: 300px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    `;
+    // Show section
+    resultSection.style.display = 'block';
     
-    // Set background color based on type
-    if (type === 'error') {
-        notification.style.background = 'linear-gradient(135deg, #e53e3e, #c53030)';
-    } else if (type === 'success') {
-        notification.style.background = 'linear-gradient(135deg, #48bb78, #38a169)';
-    } else {
-        notification.style.background = 'linear-gradient(135deg, #4299e1, #3182ce)';
-    }
-    
-    // Add to page
-    document.body.appendChild(notification);
-    
-    // Remove after 3 seconds
+    // Smooth scroll to result
     setTimeout(() => {
-        notification.style.animation = 'slideOutRight 0.3s ease-out';
-        setTimeout(() => {
-            document.body.removeChild(notification);
-        }, 300);
-    }, 3000);
+        resultSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
+    
+    // Reset classes
+    rGlow.className = 'result-glow ' + (isFake ? 'fake-glow' : 'real-glow');
+    verdictIcon.className = 'verdict-icon ' + (isFake ? 'fake-icon' : 'real-icon');
+    verdictIcon.innerHTML = isFake ? '⚠️' : '✅';
+    
+    verdictLabel.textContent = isFake ? 'FAKE NEWS' : 'REAL NEWS';
+    verdictLabel.className = 'verdict-label ' + (isFake ? 'fake-text' : 'real-text');
+    
+    // Animate Ring
+    ringPct.textContent = confPct + '%';
+    ringProg.className = 'ring-prog ' + (isFake ? 'fake-stroke' : 'real-stroke');
+    
+    // Circumference of r=52 is 2 * PI * 52 ≈ 326.7
+    const circ = 326.7;
+    const offset = circ - (confPct / 100) * circ;
+    
+    // Need a tiny timeout to allow CSS transition to trigger from default
+    setTimeout(() => {
+        ringProg.style.strokeDashoffset = offset;
+    }, 50);
+    
+    // Prob Bars
+    fakePct.textContent = fPct + '%';
+    realPct.textContent = rPct + '%';
+    
+    setTimeout(() => {
+        fakeBar.style.width = fPct + '%';
+        realBar.style.width = rPct + '%';
+    }, 50);
+    
+    // Explanation Formatting
+    let html = explanation.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\n\n/g, '</p><p>');
+    html = html.replace(/\n/g, '<br>');
+    if (!html.startsWith('<p>')) html = '<p>' + html + '</p>';
+    
+    explainContent.innerHTML = html;
 }
 
-// Add CSS animations dynamically
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideInRight {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
+// --- Analytics Dashboard Logic ---
+function showTagInsight(tag, insight) {
+    document.querySelectorAll('.ad-tag').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
     
-    @keyframes slideOutRight {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-`;
-document.head.appendChild(style);
+    const res = document.getElementById('adInsightResult');
+    if (!res) return;
+    
+    res.style.opacity = 0;
+    setTimeout(() => {
+        res.innerHTML = `<div><strong>${tag}:</strong> ${insight}</div>`;
+        res.style.opacity = 1;
+    }, 200);
+}
 
-// Example text buttons for testing
-document.addEventListener('DOMContentLoaded', () => {
-    // Add example buttons to the form
-    const exampleButtons = document.createElement('div');
-    exampleButtons.className = 'example-buttons';
-    exampleButtons.innerHTML = `
-        <p style="margin-bottom: 10px; color: #718096; font-size: 0.9rem;">Try these examples:</p>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button type="button" class="example-btn" data-example="fake">Fake Example</button>
-            <button type="button" class="example-btn" data-example="real">Real Example</button>
-        </div>
-    `;
-    
-    // Add styles for example buttons
-    const exampleStyle = document.createElement('style');
-    exampleStyle.textContent = `
-        .example-buttons {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #e2e8f0;
-        }
+// Number Counter Animation for Analytics
+function animateAnalyticsNumbers() {
+    const stats = document.querySelectorAll('.ad-val.counter');
+    stats.forEach(stat => {
+        let text = stat.textContent;
+        let suffix = '';
+        if (text.includes('%')) suffix = '%';
         
-        .example-btn {
-            background: #f7fafc;
-            border: 2px solid #e2e8f0;
-            color: #4a5568;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
+        let target = parseFloat(text.replace(/,/g, '').replace('%', ''));
+        let dec = text.includes('.') ? 1 : 0;
         
-        .example-btn:hover {
-            background: #edf2f7;
-            border-color: #cbd5e0;
-            transform: translateY(-1px);
-        }
-    `;
-    document.head.appendChild(exampleStyle);
-    
-    // Insert after the form
-    predictionForm.appendChild(exampleButtons);
-    
-    // Add click handlers
-    document.querySelectorAll('.example-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const exampleType = btn.dataset.example;
-            let exampleText = '';
-            
-            if (exampleType === 'fake') {
-                exampleText = "Celebrity reveals shocking secret cure that doctors don't want you to know. This miracle treatment can cure any disease in just 24 hours! Big pharma is trying to hide this from you!";
-            } else {
-                exampleText = "Researchers at the University of California have published a peer-reviewed study showing promising results in cancer treatment trials. The research, which analyzed data from 500 patients over two years, demonstrates a 30% improvement in response rates.";
+        const duration = 2000;
+        const frames = 60;
+        const step = target / frames;
+        let current = 0;
+        
+        const update = setInterval(() => {
+            current += step;
+            if (current >= target) {
+                current = target;
+                clearInterval(update);
             }
-            
-            newsText.value = exampleText;
-            charCount.textContent = exampleText.length;
-            charCount.style.color = '#48bb78';
-            
-            // Scroll to form
-            predictionForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        });
+            let valStr = current.toFixed(dec);
+            if (dec === 0 && target > 1000) {
+                valStr = parseInt(current).toLocaleString('en-US');
+            }
+            stat.textContent = valStr + suffix;
+        }, duration / frames);
     });
-});
+}
 
-// Auto-resize textarea
-newsText.addEventListener('input', () => {
-    newsText.style.height = 'auto';
-    newsText.style.height = newsText.scrollHeight + 'px';
-});
-
-// Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    newsText.dispatchEvent(new Event('input'));
+    if(document.querySelector('.analytics-dash')) {
+        animateAnalyticsNumbers();
+    }
+
+    // Hamburger Menu Logic
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.getElementById('navLinks');
+    if(hamburger && navLinks) {
+        hamburger.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+            hamburger.classList.toggle('active');
+        });
+        
+        // Close menu on link click
+        navLinks.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('active');
+                hamburger.classList.remove('active');
+            });
+        });
+    }
 });
+
+// Toast Notifications
+function showToast(msg, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    const icon = type === 'error' ? '⚠️' : '✓';
+    toast.innerHTML = `<span>${icon}</span> <span>${msg}</span>`;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOutRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
