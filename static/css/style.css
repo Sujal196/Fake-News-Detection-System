@@ -1281,16 +1281,20 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   }
   .hero-badge {
     margin: 0 auto 24px;
-    display: flex;
-    justify-content: center;
-    padding-left: 32px; /* Offset for the dot to center text */
-    padding-right: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
     position: relative;
     width: fit-content;
+    justify-content: center;
   }
-  .hero-badge .pulse-dot {
-    position: absolute;
-    left: 16px;
+  /* Balance the dot on the right for perfect centering */
+  .hero-badge::after {
+    content: "";
+    width: 8px; /* Matches .pulse-dot width */
+    height: 8px;
+    display: block;
   }
   .ad-header { justify-content: center; }
   
@@ -1309,16 +1313,27 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .footer-top { text-align: center; display: flex; flex-direction: column; align-items: center; }
   .footer .nav-logo {
     justify-content: center;
-    margin-bottom: 10px;
-    padding-left: 36px; /* Offset for logo icon */
-    position: relative;
+    margin: 0 auto 15px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
     width: fit-content;
   }
-  .footer .logo-icon {
-    position: absolute;
-    left: 0;
+  /* Balance the logo icon on the right for perfect centering */
+  .footer .nav-logo::after {
+    content: "";
+    width: 28px; /* Matches .logo-icon.small width */
+    height: 28px;
+    display: block;
   }
-  .footer-desc { margin-left: auto; margin-right: auto; max-width: 100%; padding: 0 10px; text-wrap: balance; }
+  .footer-desc { 
+    margin-left: auto; 
+    margin-right: auto; 
+    max-width: 320px; 
+    padding: 0; 
+    text-wrap: balance; 
+    line-height: 1.5;
+  }
   .footer-bottom { justify-content: center; text-align: center; padding: 20px 20px 0; }
   .dev-img-wrapper { width: 100px; height: 100px; }
   .dev-images { gap: 20px; justify-content: center; flex-wrap: wrap; }
@@ -1339,7 +1354,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .ad-lbl { font-size: 0.75rem; }
   
   .sec-title { font-size: 1.75rem; line-height: 1.2; margin-bottom: 12px; text-wrap: balance; }
-  .sec-sub { font-size: 0.95rem; line-height: 1.5; padding: 0 5px; text-wrap: balance; }
+  .sec-sub { font-size: 0.95rem; line-height: 1.6; padding: 0; text-wrap: balance; max-width: 340px; margin: 0 auto; }
   .analyze-card, .result-card { padding: 20px; border-radius: 16px; }
   
   .footer-badges { gap: 8px; justify-content: center; }
@@ -1364,15 +1379,27 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .logo-icon svg { width: 16px; height: 16px; }
   
   .hero-title { font-size: 1.6rem; text-wrap: balance; }
-  .hero-badge { font-size: 0.75rem; padding: 4px 12px 4px 28px; }
-  .hero-badge .pulse-dot { left: 12px; }
-  .hero-sub { text-wrap: balance; }
+  .hero-badge { 
+    font-size: 0.75rem; 
+    padding: 4px 12px; 
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .hero-badge::after {
+    content: "";
+    width: 8px; /* Balance dot */
+    height: 8px;
+    display: block;
+  }
+  .hero-sub { text-wrap: balance; max-width: 280px; margin: 0 auto; }
   
   .analytics-dash { padding: 16px; border-radius: 12px; }
   .ad-val { font-size: 1.3rem; }
   .ad-tag { font-size: 0.75rem; padding: 4px 10px; }
   
-  .sec-title, .sec-sub { text-wrap: balance; }
+  .sec-title { font-size: 1.6rem; text-wrap: balance; }
+  .sec-sub { text-wrap: balance; max-width: 280px; margin: 0 auto; line-height: 1.5; }
   
   .analyze-card, .result-card { padding: 16px; }
   .ta-topbar, .ta-footer { padding: 12px; }
