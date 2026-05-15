@@ -1278,7 +1278,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
     gap: 8px;
     padding: 6px 14px;
     width: fit-content;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     white-space: nowrap;
   }
   .hero-badge::after { content: ""; width: 8px; height: 8px; display: block; }
@@ -1311,7 +1311,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
 @media (max-width: 480px) {
   .section { padding: 40px 0; }
   .hero-title { font-size: 1.8rem; line-height: 1.2; }
-  .hero-badge { white-space: nowrap; font-size: 0.8rem; }
+  .hero-badge { white-space: nowrap; font-size: 0.85rem; }
   .hero-sub { font-size: 1rem; max-width: 300px; margin: 0 auto 30px; }
   
   .analytics-dash { padding: 20px; gap: 20px; border-radius: 20px; }
@@ -1343,7 +1343,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   
   .hero-title { font-size: 1.5rem; }
   .hero-badge { 
-    font-size: 0.7rem; 
+    font-size: 0.75rem; 
     gap: 6px; 
     padding: 4px 10px; 
     white-space: nowrap;
