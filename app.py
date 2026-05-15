@@ -105,18 +105,8 @@ def predict():
         return jsonify(result)
         
     except Exception as e:
-        import traceback
-        error_details = traceback.format_exc()
-        print(f"Prediction error: {error_details}")
-        # Return the actual error temporarily to help debug deployment
-        return jsonify({
-            'error': 'Failed to analyze text',
-            'details': str(e),
-            'prediction': 'Error',
-            'confidence': 0,
-            'probabilities': {'Fake News': 0.5, 'Real News': 0.5},
-            'explanation': f"An error occurred in the backend: {str(e)}"
-        }), 200 # Return 200 so the UI can show the explanation instead of a toast
+        print(f"Prediction error: {str(e)}")
+        return jsonify({'error': 'Failed to analyze text'}), 500
 
 @app.route('/health')
 def health_check():
