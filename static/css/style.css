@@ -616,6 +616,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 15px;
   background: rgba(255,255,255,0.02);
 }
 
@@ -746,6 +747,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   display: flex;
   align-items: center;
   gap: 20px;
+  text-align: left;
 }
 
 .verdict-icon {
@@ -1167,7 +1169,8 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .tool-grid { grid-template-columns: 1fr; }
   .steps-row { flex-direction: column; align-items: stretch; gap: 40px; }
   .step-arrow { height: auto; transform: rotate(90deg); padding: 5px 0; }
-  .result-top { flex-direction: column; text-align: center; gap: 20px; }
+  .result-top { flex-direction: column; text-align: center; gap: 24px; padding-bottom: 24px; }
+  .verdict-box { flex-direction: column; text-align: center; gap: 12px; }
   
   .feat-card, .step-card { text-align: center; }
   .sec-header { text-align: center; }
@@ -1222,10 +1225,13 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .example-tags { justify-content: center; }
   
   .footer-top { text-align: center; display: flex; flex-direction: column; align-items: center; }
-  .footer-desc { margin-left: auto; margin-right: auto; max-width: 100%; }
-  .footer-bottom { justify-content: center; text-align: center; padding-top: 20px; }
+  .footer-desc { margin-left: auto; margin-right: auto; max-width: 100%; padding: 0 10px; }
+  .footer-bottom { justify-content: center; text-align: center; padding: 20px 20px 0; }
   .dev-img-wrapper { width: 90px; height: 90px; }
   .dev-images { gap: 20px; justify-content: center; flex-wrap: wrap; }
+
+  .ta-footer { flex-direction: column; gap: 16px; text-align: center; }
+  .char-counter { justify-content: center; }
 }
 
 @media (max-width: 480px) {
@@ -1236,7 +1242,8 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .analytics-dash { padding: 16px; gap: 16px; border-radius: 16px; }
   .ad-val { font-size: 1.4rem; }
   
-  .sec-title { font-size: 1.75rem; }
+  .sec-title { font-size: 1.75rem; line-height: 1.2; margin-bottom: 12px; }
+  .sec-sub { font-size: 1rem; line-height: 1.5; padding: 0 10px; }
   .analyze-card, .result-card { padding: 16px; border-radius: 16px; }
   
   .footer-badges { gap: 8px; justify-content: center; }
@@ -1244,6 +1251,9 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   
   .dev-img-wrapper { width: 85px; height: 85px; }
   .footer-devs p { font-size: 1.1rem; }
+  
+  .verdict-label { font-size: 1.8rem; }
+  .verdict-sub { font-size: 0.85rem; }
 }
 
 /* Mobile Side View (Landscape) Optimization */
