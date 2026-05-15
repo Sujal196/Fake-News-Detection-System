@@ -1276,8 +1276,10 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 6px 16px;
+    padding: 6px 14px;
     width: fit-content;
+    font-size: 0.85rem;
+    white-space: nowrap;
   }
   .hero-badge::after { content: ""; width: 8px; height: 8px; display: block; }
   
@@ -1308,7 +1310,8 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
 /* Small Mobile (480px) */
 @media (max-width: 480px) {
   .section { padding: 40px 0; }
-  .hero-title { font-size: 1.8rem; }
+  .hero-title { font-size: 1.8rem; line-height: 1.2; }
+  .hero-badge { white-space: nowrap; font-size: 0.8rem; }
   .hero-sub { font-size: 1rem; max-width: 300px; margin: 0 auto 30px; }
   
   .analytics-dash { padding: 20px; gap: 20px; border-radius: 20px; }
@@ -1339,7 +1342,12 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .logo-icon svg { width: 14px; height: 14px; }
   
   .hero-title { font-size: 1.5rem; }
-  .hero-badge { font-size: 0.7rem; gap: 6px; padding: 4px 12px; }
+  .hero-badge { 
+    font-size: 0.7rem; 
+    gap: 6px; 
+    padding: 4px 10px; 
+    white-space: nowrap;
+  }
   .hero-badge::after { width: 6px; height: 6px; }
   
   .analytics-dash { padding: 16px; }
