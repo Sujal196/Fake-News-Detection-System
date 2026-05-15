@@ -196,6 +196,24 @@
                 </form>
             </div>
 
+            <!-- Skeleton Loading (Hidden by default) -->
+            <div id="loadingSection" style="display:none">
+                <div class="result-card" style="padding: 30px; position: relative; overflow: hidden;">
+                    <div class="scanning-line"></div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                        <div style="display: flex; align-items: center; gap: 20px;">
+                            <div class="skeleton" style="width: 60px; height: 60px; border-radius: 16px;"></div>
+                            <div>
+                                <div class="skeleton" style="width: 150px; height: 28px; margin-bottom: 8px;"></div>
+                                <div class="skeleton" style="width: 100px; height: 16px;"></div>
+                            </div>
+                        </div>
+                        <div class="skeleton" style="width: 120px; height: 120px; border-radius: 50%;"></div>
+                    </div>
+                    <div class="skeleton" style="width: 100%; height: 100px; border-radius: 16px;"></div>
+                </div>
+            </div>
+
             <!-- Results -->
             <div id="resultSection" style="display:none">
                 <div class="result-card" id="resultCard">
