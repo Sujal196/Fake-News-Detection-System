@@ -22,8 +22,10 @@ nltk.data.path.append(nltk_data_path)
 def download_nltk_data():
     try:
         nltk.download('punkt', download_dir=nltk_data_path, quiet=True)
+        nltk.download('punkt_tab', download_dir=nltk_data_path, quiet=True)
         nltk.download('stopwords', download_dir=nltk_data_path, quiet=True)
         nltk.download('wordnet', download_dir=nltk_data_path, quiet=True)
+        nltk.download('omw-1.4', download_dir=nltk_data_path, quiet=True)
     except Exception as e:
         print(f"NLTK download warning: {e}")
 
