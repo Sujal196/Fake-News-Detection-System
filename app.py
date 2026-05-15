@@ -30,12 +30,18 @@ def initialize_model():
         
         preprocessor = TextPreprocessor()
         print("Model initialized successfully!")
+        return True
         
     except Exception as e:
-        print(f"Error initializing model: {e}")
-     
+        print(f"Error initializing model: {str(e)}")
+        import traceback
+        traceback.print_exc()
         detector = None
-        preprocessor = TextPreprocessor()
+        try:
+            preprocessor = TextPreprocessor()
+        except:
+            preprocessor = None
+        return False
 
 def fallback_predict(text):
    
@@ -99,8 +105,18 @@ def predict():
         return jsonify(result)
         
     except Exception as e:
-        print(f"Prediction error: {e}")
-        return jsonify({'error': 'Failed to analyze text'}), 500
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Prediction error: {error_details}")
+        # Return the actual error temporarily to help debug deployment
+        return jsonify({
+            'error': 'Failed to analyze text',
+            'details': str(e),
+            'prediction': 'Error',
+            'confidence': 0,
+            'probabilities': {'Fake News': 0.5, 'Real News': 0.5},
+            'explanation': f"An error occurred in the backend: {str(e)}"
+        }), 200 # Return 200 so the UI can show the explanation instead of a toast
 
 @app.route('/health')
 def health_check():

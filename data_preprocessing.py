@@ -32,7 +32,11 @@ download_nltk_data()
 class TextPreprocessor:
     def __init__(self):
         self.lemmatizer = WordNetLemmatizer()
-        self.stop_words = set(stopwords.words('english'))
+        try:
+            self.stop_words = set(stopwords.words('english'))
+        except Exception as e:
+            print(f"Warning: Could not load stopwords: {e}")
+            self.stop_words = set()
         
     def clean_text(self, text):
         if not isinstance(text, str):
