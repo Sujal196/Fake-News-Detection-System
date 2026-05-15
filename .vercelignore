@@ -1,0 +1,10 @@
+*.csv
+*.pkl
+!models/*.pkl
+train_large_dataset.py
+data_preprocessing.pyc
+ml_models.pyc
+__pycache__/
+.git/
+.ipynb_checkpoints/
+*.ipynb

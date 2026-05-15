@@ -141,12 +141,12 @@ def not_found(error):
 def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
+
+# Initialize model for serverless deployment
+initialize_model()
+
 if __name__ == '__main__':
     print("Starting Fake News Detection System...")
-    
-   
-    initialize_model()
-    
     
     if not os.path.exists('models'):
         os.makedirs('models')

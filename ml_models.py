@@ -4,8 +4,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, confusion_matrix
 import pickle
-import matplotlib.pyplot as plt
-import seaborn as sns
+import pickle
 from data_preprocessing import load_and_preprocess_data, prepare_data
 
 class FakeNewsDetector:
@@ -219,6 +218,8 @@ class FakeNewsDetector:
         print("Model and vectorizer loaded successfully!")
     
     def generate_confusion_matrix(self, y_true, y_pred, model_name):
+        import matplotlib.pyplot as plt
+        import seaborn as sns
         cm = confusion_matrix(y_true, y_pred)
         
         plt.figure(figsize=(8, 6))
