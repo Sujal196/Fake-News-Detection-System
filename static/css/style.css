@@ -1281,7 +1281,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
     font-size: 0.9rem;
     white-space: nowrap;
   }
-  .hero-badge::after { content: ""; width: 8px; height: 8px; display: block; }
+  .hero-badge::after { content: ""; width: 20px; height: 1px; display: block; }
   
   .ad-grid { grid-template-columns: 1fr !important; }
   .hero-ctas { flex-direction: column !important; width: 100%; max-width: 400px; margin: 0 auto; gap: 12px; }
@@ -1302,7 +1302,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
     gap: 12px;
     width: fit-content;
   }
-  .footer .nav-logo::after { content: ""; width: 28px; height: 28px; display: block; }
+  .footer .nav-logo::after { content: ""; width: 40px; height: 1px; display: block; }
   .footer-desc { margin: 0 auto 30px; max-width: 320px; text-wrap: balance; }
   .dev-img-wrapper { width: 100px; height: 100px; }
 }
@@ -1348,7 +1348,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
     padding: 4px 10px; 
     white-space: nowrap;
   }
-  .hero-badge::after { width: 6px; height: 6px; }
+  .hero-badge::after { width: 14px; height: 1px; }
   
   .analytics-dash { padding: 16px; }
   .ad-val { font-size: 1.25rem; }
