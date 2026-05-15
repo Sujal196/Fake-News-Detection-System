@@ -1265,8 +1265,33 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .hamburger.active span:nth-child(2) { opacity: 0; }
   .hamburger.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -6px); }
 
-  .hero-title { font-size: clamp(2rem, 8vw, 2.8rem); margin-bottom: 20px; text-align: center; line-height: 1.2; }
-  .hero-sub { max-width: 100%; text-align: center; margin: 0 auto 30px; font-size: 1.1rem; }
+  .hero-title { 
+    font-size: clamp(2rem, 8vw, 2.8rem); 
+    margin-bottom: 20px; 
+    text-align: center; 
+    line-height: 1.2;
+    text-wrap: balance;
+  }
+  .hero-sub { 
+    max-width: 100%; 
+    text-align: center; 
+    margin: 0 auto 30px; 
+    font-size: 1.1rem;
+    text-wrap: balance;
+  }
+  .hero-badge {
+    margin: 0 auto 24px;
+    display: flex;
+    justify-content: center;
+    padding-left: 32px; /* Offset for the dot to center text */
+    padding-right: 16px;
+    position: relative;
+    width: fit-content;
+  }
+  .hero-badge .pulse-dot {
+    position: absolute;
+    left: 16px;
+  }
   .ad-header { justify-content: center; }
   
   .analyze-card, .result-card { padding: 24px; text-align: left; }
@@ -1282,7 +1307,18 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .example-tags { justify-content: center; }
   
   .footer-top { text-align: center; display: flex; flex-direction: column; align-items: center; }
-  .footer-desc { margin-left: auto; margin-right: auto; max-width: 100%; padding: 0 10px; }
+  .footer .nav-logo {
+    justify-content: center;
+    margin-bottom: 10px;
+    padding-left: 36px; /* Offset for logo icon */
+    position: relative;
+    width: fit-content;
+  }
+  .footer .logo-icon {
+    position: absolute;
+    left: 0;
+  }
+  .footer-desc { margin-left: auto; margin-right: auto; max-width: 100%; padding: 0 10px; text-wrap: balance; }
   .footer-bottom { justify-content: center; text-align: center; padding: 20px 20px 0; }
   .dev-img-wrapper { width: 100px; height: 100px; }
   .dev-images { gap: 20px; justify-content: center; flex-wrap: wrap; }
@@ -1302,8 +1338,8 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .ad-val { font-size: 1.5rem; }
   .ad-lbl { font-size: 0.75rem; }
   
-  .sec-title { font-size: 1.75rem; line-height: 1.2; margin-bottom: 12px; }
-  .sec-sub { font-size: 0.95rem; line-height: 1.5; padding: 0 5px; }
+  .sec-title { font-size: 1.75rem; line-height: 1.2; margin-bottom: 12px; text-wrap: balance; }
+  .sec-sub { font-size: 0.95rem; line-height: 1.5; padding: 0 5px; text-wrap: balance; }
   .analyze-card, .result-card { padding: 20px; border-radius: 16px; }
   
   .footer-badges { gap: 8px; justify-content: center; }
@@ -1327,12 +1363,16 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .logo-icon { width: 30px; height: 30px; }
   .logo-icon svg { width: 16px; height: 16px; }
   
-  .hero-title { font-size: 1.6rem; }
-  .hero-badge { font-size: 0.75rem; padding: 4px 12px; }
+  .hero-title { font-size: 1.6rem; text-wrap: balance; }
+  .hero-badge { font-size: 0.75rem; padding: 4px 12px 4px 28px; }
+  .hero-badge .pulse-dot { left: 12px; }
+  .hero-sub { text-wrap: balance; }
   
   .analytics-dash { padding: 16px; border-radius: 12px; }
   .ad-val { font-size: 1.3rem; }
   .ad-tag { font-size: 0.75rem; padding: 4px 10px; }
+  
+  .sec-title, .sec-sub { text-wrap: balance; }
   
   .analyze-card, .result-card { padding: 16px; }
   .ta-topbar, .ta-footer { padding: 12px; }
