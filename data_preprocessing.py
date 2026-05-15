@@ -8,9 +8,25 @@ from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('wordnet')
+# Set NLTK data path to a writable directory on Vercel
+nltk_data_path = os.path.join('/tmp', 'nltk_data')
+if not os.path.exists(nltk_data_path):
+    try:
+        os.makedirs(nltk_data_path)
+    except:
+        pass
+
+nltk.data.path.append(nltk_data_path)
+
+def download_nltk_data():
+    try:
+        nltk.download('punkt', download_dir=nltk_data_path, quiet=True)
+        nltk.download('stopwords', download_dir=nltk_data_path, quiet=True)
+        nltk.download('wordnet', download_dir=nltk_data_path, quiet=True)
+    except Exception as e:
+        print(f"NLTK download warning: {e}")
+
+download_nltk_data()
 
 class TextPreprocessor:
     def __init__(self):

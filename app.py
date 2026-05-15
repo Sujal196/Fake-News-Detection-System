@@ -15,18 +15,17 @@ def initialize_model():
     global detector, preprocessor
     
     try:
-        
-        model_path = 'models/final_model.pkl'
-        vectorizer_path = 'models/final_vectorizer.pkl'
+        # Use absolute paths for Vercel compatibility
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        model_path = os.path.join(base_dir, 'models', 'final_model.pkl')
+        vectorizer_path = os.path.join(base_dir, 'models', 'final_vectorizer.pkl')
         
         if os.path.exists(model_path) and os.path.exists(vectorizer_path):
-            print("Loading large dataset model (100% accuracy)...")
+            print(f"Loading model from: {model_path}")
             detector = FakeNewsDetector()
             detector.load_model(model_path, vectorizer_path)
         else:
-            print("⚠️  Large dataset model not found!")
-            print("📊 Please run 'python train_large_dataset.py' first.")
-            print("🚀 This will train a model with 100% accuracy on 44,898 articles.")
+            print(f"⚠️  Model not found at {model_path}!")
             return False
         
         preprocessor = TextPreprocessor()
