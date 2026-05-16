@@ -1060,7 +1060,8 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   color: var(--text-muted);
   margin: 20px 0 30px;
   max-width: 400px;
-  font-size: 1.1rem;
+  font-size: clamp(0.85rem, 4.5vw, 1.1rem);
+  white-space: nowrap;
 }
 
 .footer-badges {
