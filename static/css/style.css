@@ -309,30 +309,37 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
 }
 
 .hero-badge {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 10px;
   background: rgba(79, 70, 229, 0.1);
   border: 1px solid rgba(79, 70, 229, 0.2);
-  padding: 8px 50px; /* Increased length */
+  padding: 8px 20px;
   border-radius: 30px;
   font-size: 0.9rem;
   font-weight: 600;
   color: #818cf8;
   margin-bottom: 24px;
-  position: relative;
-  width: fit-content;
   white-space: nowrap;
+  position: relative;
+  transition: var(--transition);
+}
+
+/* Invisible spacer to balance the icon and keep text perfectly centered */
+.hero-badge::after {
+  content: "";
+  width: 10px; /* Matches the .pulse-dot width */
+  display: block;
 }
 
 .pulse-dot {
-  position: absolute;
-  left: 18px; /* Adjusted for longer banner */
-  width: 10px; height: 10px; /* Slightly larger for visibility */
+  width: 10px; height: 10px;
   background: #818cf8;
   border-radius: 50%;
   box-shadow: 0 0 0 0 rgba(129, 140, 248, 0.7);
   animation: pulse 2s infinite;
+  flex-shrink: 0;
 }
 
 @keyframes pulse {
@@ -1278,14 +1285,12 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .hero-sub { font-size: 1.1rem; line-height: 1.6; }
   .hero-badge {
     margin: 0 auto 24px;
-    padding: 8px 52px; 
+    padding: 8px 18px; 
     font-size: 0.88rem;
-    white-space: nowrap;
-    max-width: 92%;
+    gap: 8px;
   }
-  .hero-badge .pulse-dot {
-    left: 20px;
-  }
+  .hero-badge::after { width: 10px; }
+  .hero-badge .pulse-dot { position: static; width: 10px; height: 10px; }
   .hero-badge::after { display: none; }
   
   .ad-grid { grid-template-columns: 1fr !important; }
@@ -1355,11 +1360,12 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .hero-title { font-size: 1.5rem; }
   .hero-badge { 
     font-size: 0.7rem; 
-    padding: 5px 38px; 
-    white-space: nowrap;
-    max-width: 92%;
+    padding: 6px 14px; 
+    gap: 6px;
+    max-width: 95%;
   }
-  .hero-badge .pulse-dot { left: 14px; width: 8px; height: 8px; }
+  .hero-badge::after { width: 8px; }
+  .hero-badge .pulse-dot { width: 8px; height: 8px; position: static; }
   .hero-badge::after { display: none; }
   
   .analytics-dash { padding: 16px; }
