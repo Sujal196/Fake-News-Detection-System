@@ -1276,17 +1276,17 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 6px 28px; /* Slightly reduced to fit narrow screens */
+    padding: 6px 38px; /* Balanced padding to prevent overlap and center text */
     width: fit-content;
-    font-size: 0.85rem; /* Reduced to ensure fit */
+    font-size: 0.85rem;
     white-space: nowrap;
     position: relative;
-    max-width: 95%; /* Prevent touching screen edges */
+    max-width: 95%;
   }
   .hero-badge .pulse-dot {
     position: absolute;
-    left: 14px; /* Centered within the left padding */
-    margin-right: 0;
+    left: 14px; /* Sufficient space from the left edge */
+    margin: 0;
   }
   .hero-badge::after { display: none; }
   
@@ -1356,16 +1356,16 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   
   .hero-title { font-size: 1.5rem; }
   .hero-badge { 
-    font-size: 0.68rem; /* Further reduced for 320px screens */
-    padding: 4px 18px; 
+    font-size: 0.68rem; 
+    padding: 4px 28px; /* Increased to avoid overlap */
     white-space: nowrap;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    max-width: 90%;
+    max-width: 95%;
   }
-  .hero-badge .pulse-dot { left: 6px; margin: 0; }
+  .hero-badge .pulse-dot { left: 10px; margin: 0; }
   .hero-badge::after { display: none; }
   
   .analytics-dash { padding: 16px; }
