@@ -1308,20 +1308,24 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .nav-right { gap: 12px; }
 
   .footer .nav-logo {
-    justify-content: center;
-    margin: 0 auto 15px;
     display: flex;
     align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 0 auto 15px;
     width: fit-content;
-    padding: 0 50px; /* More generous symmetrical padding */
     position: relative;
   }
-  .footer .logo-icon {
-    position: absolute;
-    left: 12px;
-    margin: 0;
+  .footer .nav-logo::after {
+    content: "";
+    width: 28px; /* Matches the .logo-icon.small width */
+    display: block;
   }
-  .footer .nav-logo::after { display: none; }
+  .footer .logo-icon {
+    position: static;
+    margin: 0;
+    flex-shrink: 0;
+  }
   .footer-desc { margin: 0 auto 30px; max-width: 320px; text-wrap: balance; }
   .dev-img-wrapper { width: 100px; height: 100px; }
 }
