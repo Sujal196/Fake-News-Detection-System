@@ -1234,7 +1234,14 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .ad-card { text-align: center; }
   .ad-lbl { text-align: center; }
   .ad-tags { justify-content: center; }
-  .ad-insight-result { justify-content: center; text-align: center; }
+  .ad-insight-result { 
+    justify-content: center; 
+    text-align: center; 
+    border-left: none;
+    border-bottom: 3px solid var(--primary);
+    border-radius: 8px;
+  }
+  .ad-insight-result div { text-align: center; width: 100%; }
   
   .steps-row { flex-direction: column; align-items: center; gap: 40px; }
   .step-card { width: 100%; max-width: 500px; text-align: center; }
