@@ -927,7 +927,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   padding: 32px;
   border-radius: 20px;
   transition: var(--transition);
-  text-align: center;
+  text-align: left;
 }
 
 .feat-card:hover {
@@ -942,7 +942,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 24px;
+  margin: 0 0 24px 0;
 }
 
 .feat-icon svg { width: 24px; height: 24px; }
@@ -961,8 +961,8 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
 .feat-card p {
   color: var(--text-muted);
   font-size: 0.95rem;
-  margin: 0 auto 24px;
-  text-align: center;
+  margin: 0 0 24px 0;
+  text-align: left;
   text-wrap: balance;
   line-height: 1.6;
 }
@@ -1249,8 +1249,8 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .ad-insight-result div { text-align: center; width: 100%; }
   
   .steps-row { flex-direction: column; align-items: center; gap: 40px; }
-  .step-card { width: 100%; max-width: 500px; text-align: center; }
-  .step-num { left: 50%; transform: translateX(-50%); }
+  .step-card { width: 100%; max-width: 500px; text-align: left; }
+  .step-num { left: 30px; transform: none; }
   .step-arrow { transform: rotate(90deg); margin: 10px 0; }
   
   .result-top { flex-direction: column; gap: 24px; padding-bottom: 24px; text-align: center; }
@@ -1380,10 +1380,10 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .sec-badge { font-size: 0.75rem; padding: 5px 12px; margin: 0 auto 20px; display: inline-flex; }
   
   .features-grid { grid-template-columns: 1fr; gap: 14px; }
-  .feat-card { padding: 24px; border-radius: 16px; text-align: center; }
-  .feat-icon { margin: 0 auto 24px; }
+  .feat-card { padding: 24px; border-radius: 16px; text-align: left; }
+  .feat-icon { margin: 0 0 24px 0; }
   .feat-card h3 { font-size: 1.1rem; }
-  .feat-card p { font-size: 0.9rem; margin-bottom: 16px; }
+  .feat-card p { font-size: 0.9rem; margin: 0 0 16px 0; text-align: left; }
   
   .step-card { padding: 32px 24px; }
   .step-emoji { font-size: 2.5rem; margin-bottom: 16px; }
