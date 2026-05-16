@@ -559,6 +559,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   color: var(--text-muted);
   max-width: 900px;
   margin: 0 auto;
+  text-wrap: balance;
 }
 
 /* Analyze Section */
@@ -977,7 +978,6 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   display: flex;
   align-items: stretch;
   gap: 20px;
-  text-align: center;
 }
 
 .step-card {
@@ -988,6 +988,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   border-radius: 24px;
   position: relative;
   transition: var(--transition);
+  text-align: left;
 }
 
 .step-card:hover {
@@ -997,8 +998,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
 
 .step-num {
   position: absolute;
-  top: -15px; left: 50%;
-  transform: translateX(-50%);
+  top: -15px; left: 30px;
   background: var(--primary);
   color: white;
   width: 40px; height: 30px;
@@ -1227,14 +1227,15 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   }
   .hero-content { width: 100%; }
   .hero-badge { margin: 0 auto 24px; }
-  .hero-sub { margin: 0 auto 30px; text-align: center; }
+  .hero-sub { margin: 0 auto 30px; text-align: center; text-wrap: balance; }
   .hero-ctas { justify-content: center; }
   .hero-visual { width: 100%; display: flex; justify-content: center; }
   
   .ad-card { text-align: center; }
   
   .steps-row { flex-direction: column; align-items: center; gap: 40px; }
-  .step-card { width: 100%; max-width: 500px; }
+  .step-card { width: 100%; max-width: 500px; text-align: center; }
+  .step-num { left: 50%; transform: translateX(-50%); }
   .step-arrow { transform: rotate(90deg); margin: 10px 0; }
   
   .result-top { flex-direction: column; gap: 24px; padding-bottom: 24px; text-align: center; }
@@ -1279,7 +1280,8 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
     line-height: 1.2;
     text-wrap: balance;
   }
-  .hero-sub { font-size: 1.05rem; line-height: 1.6; max-width: 90%; }
+  .hero-sub { font-size: 1.05rem; line-height: 1.6; max-width: 90%; margin: 0 auto 30px; text-align: center; text-wrap: balance; }
+  .sec-sub { margin: 0 auto; text-align: center; text-wrap: balance; }
   .hero-badge {
     margin: 0 auto 24px;
     padding: 8px 20px; 
@@ -1344,8 +1346,8 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
 
   .hero { padding: 110px 16px 50px; gap: 24px; }
   .hero-title { font-size: 1.8rem; line-height: 1.2; }
-  .hero-badge { white-space: nowrap; font-size: 0.78rem; padding: 6px 16px; }
-  .hero-sub { font-size: 1rem; max-width: 100%; margin: 0 auto 30px; }
+  .hero-badge { white-space: nowrap; font-size: 0.78rem; padding: 6px 16px; margin: 0 auto 24px; }
+  .hero-sub { font-size: 1rem; max-width: 100%; margin: 0 auto 30px; text-align: center; text-wrap: balance; }
   
   .analytics-dash { padding: 20px; gap: 18px; border-radius: 20px; }
   .ad-header { font-size: 0.95rem; padding-bottom: 12px; }
@@ -1357,9 +1359,9 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .ad-tag { font-size: 0.75rem; padding: 4px 10px; }
   .ad-insight-result { font-size: 0.8rem; min-height: 45px; padding: 10px 12px; }
   
-  .sec-title { font-size: 1.5rem; }
-  .sec-sub { font-size: 0.9rem; line-height: 1.6; max-width: 100%; }
-  .sec-badge { font-size: 0.75rem; padding: 5px 12px; }
+  .sec-title { font-size: 1.5rem; text-align: center; }
+  .sec-sub { font-size: 0.9rem; line-height: 1.6; max-width: 100%; text-align: center; text-wrap: balance; margin: 0 auto; }
+  .sec-badge { font-size: 0.75rem; padding: 5px 12px; margin: 0 auto 20px; display: inline-flex; }
   
   .features-grid { grid-template-columns: 1fr; gap: 14px; }
   .feat-card { padding: 24px; border-radius: 16px; text-align: center; }
@@ -1427,9 +1429,11 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
     padding: 6px 12px; 
     gap: 6px;
     max-width: 100%;
+    margin: 0 auto 24px;
+    display: inline-flex;
   }
   .hero-badge .pulse-dot { width: 8px; height: 8px; }
-  .hero-sub { font-size: 0.9rem; }
+  .hero-sub { font-size: 0.9rem; margin: 0 auto 30px; text-align: center; text-wrap: balance; }
   
   .btn-primary { padding: 14px 20px; font-size: 1rem; }
   .btn-ghost { padding: 14px 20px; font-size: 1rem; }
