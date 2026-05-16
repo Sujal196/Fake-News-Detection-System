@@ -1367,7 +1367,8 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .ad-bar-stack { height: 22px; }
   .ad-tags { gap: 6px; margin-bottom: 10px; }
   .ad-tag { font-size: 0.75rem; padding: 4px 10px; }
-  .ad-insight-result { font-size: 0.8rem; min-height: 45px; padding: 10px 12px; }
+  .ad-insight-result { font-size: clamp(0.65rem, 3.5vw, 0.8rem); min-height: 45px; padding: 10px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ad-insight-result.active-insight { white-space: normal; }
   
   .sec-title { font-size: 1.5rem; text-align: center; }
   .sec-sub { font-size: 0.9rem; line-height: 1.6; max-width: 100%; text-align: center; text-wrap: balance; margin: 0 auto; }
@@ -1455,6 +1456,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .ad-lbl { font-size: 0.7rem; letter-spacing: 0.5px; }
   
   .analyze-card, .result-card { padding: 14px; border-radius: 12px; }
+  .ad-insight-result { font-size: clamp(0.6rem, 3.2vw, 0.75rem); padding: 10px 2px; }
   #newsText { font-size: 0.88rem; padding: 12px; }
   
   .verdict-label { font-size: 1.5rem; }

@@ -192,6 +192,7 @@ function showTagInsight(tag, insight) {
     res.style.opacity = 0;
     setTimeout(() => {
         res.innerHTML = `<div><strong>${tag}:</strong> ${insight}</div>`;
+        res.classList.add('active-insight');
         res.style.opacity = 1;
     }, 200);
 }
