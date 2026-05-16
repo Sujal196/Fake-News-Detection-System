@@ -1276,16 +1276,16 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 6px 38px; /* Balanced padding to prevent overlap and center text */
+    padding: 8px 44px; /* More generous symmetrical padding */
     width: fit-content;
     font-size: 0.85rem;
     white-space: nowrap;
     position: relative;
-    max-width: 95%;
+    max-width: 90%;
   }
   .hero-badge .pulse-dot {
     position: absolute;
-    left: 14px; /* Sufficient space from the left edge */
+    left: 16px; /* Generous space from edge */
     margin: 0;
   }
   .hero-badge::after { display: none; }
@@ -1307,12 +1307,12 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
     display: flex;
     align-items: center;
     width: fit-content;
-    padding: 0 45px; /* Symmetrical padding for perfect logo centering */
+    padding: 0 50px; /* More generous symmetrical padding */
     position: relative;
   }
   .footer .logo-icon {
     position: absolute;
-    left: 10px;
+    left: 12px;
     margin: 0;
   }
   .footer .nav-logo::after { display: none; }
@@ -1356,16 +1356,16 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   
   .hero-title { font-size: 1.5rem; }
   .hero-badge { 
-    font-size: 0.68rem; 
-    padding: 4px 28px; /* Increased to avoid overlap */
+    font-size: 0.65rem; 
+    padding: 4px 34px; /* More generous symmetrical padding */
     white-space: nowrap;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    max-width: 95%;
+    max-width: 90%;
   }
-  .hero-badge .pulse-dot { left: 10px; margin: 0; }
+  .hero-badge .pulse-dot { left: 12px; margin: 0; }
   .hero-badge::after { display: none; }
   
   .analytics-dash { padding: 16px; }
