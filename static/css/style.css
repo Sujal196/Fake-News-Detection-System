@@ -312,10 +312,10 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
   background: rgba(79, 70, 229, 0.1);
   border: 1px solid rgba(79, 70, 229, 0.2);
-  padding: 10px 48px; /* Generous symmetrical padding for a premium banner look */
+  padding: 8px 20px;
   border-radius: 30px;
   font-size: 0.9rem;
   font-weight: 600;
@@ -1285,9 +1285,9 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .hero-sub { font-size: 1.1rem; line-height: 1.6; }
   .hero-badge {
     margin: 0 auto 24px;
-    padding: 10px 44px; /* Increased internal space for mobile */
+    padding: 8px 18px; 
     font-size: 0.88rem;
-    gap: 10px;
+    gap: 8px;
   }
   .hero-badge::after { width: 10px; }
   .hero-badge .pulse-dot { position: static; width: 10px; height: 10px; }
@@ -1360,9 +1360,9 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .hero-title { font-size: 1.5rem; }
   .hero-badge { 
     font-size: 0.7rem; 
-    padding: 8px 30px; /* Balanced spacing for narrow screens */
-    gap: 8px;
-    max-width: 90%;
+    padding: 6px 14px; 
+    gap: 6px;
+    max-width: 95%;
   }
   .hero-badge::after { width: 8px; }
   .hero-badge .pulse-dot { width: 8px; height: 8px; position: static; }
