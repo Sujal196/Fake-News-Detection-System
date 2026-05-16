@@ -309,9 +309,8 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
 }
 
 .hero-badge {
-  display: flex; /* Changed from inline-flex for better centering support */
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 10px;
   background: rgba(79, 70, 229, 0.1);
   border: 1px solid rgba(79, 70, 229, 0.2);
@@ -320,18 +319,10 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   font-size: 0.9rem;
   font-weight: 600;
   color: #818cf8;
-  margin: 0 auto 24px; /* Force center */
+  margin-bottom: 24px;
   white-space: nowrap;
-  width: fit-content; /* Ensure it only takes needed space */
-  position: relative;
+  width: fit-content;
   transition: var(--transition);
-}
-
-/* Invisible spacer to balance the icon and keep text perfectly centered */
-.hero-badge::after {
-  content: "";
-  width: 10px; /* Matches the .pulse-dot width */
-  display: block;
 }
 
 .pulse-dot {
@@ -362,6 +353,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   color: var(--text-muted);
   max-width: 540px;
   margin-bottom: 40px;
+  line-height: 1.7;
 }
 
 .hero-sub strong {
@@ -1235,16 +1227,18 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   }
   .hero-content { width: 100%; }
   .hero-badge { margin: 0 auto 24px; }
-  .hero-sub { margin: 0 auto 30px; }
+  .hero-sub { margin: 0 auto 30px; text-align: center; }
   .hero-ctas { justify-content: center; }
   .hero-visual { width: 100%; display: flex; justify-content: center; }
+  
+  .ad-card { text-align: center; }
   
   .steps-row { flex-direction: column; align-items: center; gap: 40px; }
   .step-card { width: 100%; max-width: 500px; }
   .step-arrow { transform: rotate(90deg); margin: 10px 0; }
   
-  .result-top { flex-direction: column; gap: 24px; padding-bottom: 24px; }
-  .verdict-box { flex-direction: column; gap: 12px; }
+  .result-top { flex-direction: column; gap: 24px; padding-bottom: 24px; text-align: center; }
+  .verdict-box { flex-direction: column; gap: 12px; text-align: center; }
 }
 
 /* Tablets (768px) */
@@ -1292,9 +1286,8 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
     font-size: 0.82rem;
     gap: 8px;
     width: fit-content;
-    display: flex;
+    display: inline-flex;
   }
-  .hero-badge::after { display: none; }
   .hero-badge .pulse-dot { position: static; width: 10px; height: 10px; }
   
   .ad-grid { grid-template-columns: 1fr 1fr; }
@@ -1311,7 +1304,8 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .sec-header { margin-bottom: 40px; }
   
   .features-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
-  .feat-card { padding: 24px; }
+  .feat-card { padding: 24px; text-align: center; }
+  .feat-icon { margin: 0 auto 24px; }
   
   .submit-btn { padding: 16px; font-size: 1.05rem; }
   
@@ -1335,15 +1329,11 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
     justify-content: center;
     gap: 12px;
     margin: 0 auto 15px;
-    width: auto;
-    padding-right: 0;
   }
   .footer .logo-icon {
-    position: static;
-    margin: 0;
     flex-shrink: 0;
   }
-  .footer-desc { margin: 0 auto 30px; max-width: 320px; text-wrap: balance; }
+  .footer-desc { margin: 0 auto 30px; max-width: 320px; text-align: center; text-wrap: balance; }
   .dev-img-wrapper { width: 100px; height: 100px; }
 }
 
@@ -1372,7 +1362,8 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .sec-badge { font-size: 0.75rem; padding: 5px 12px; }
   
   .features-grid { grid-template-columns: 1fr; gap: 14px; }
-  .feat-card { padding: 24px; border-radius: 16px; }
+  .feat-card { padding: 24px; border-radius: 16px; text-align: center; }
+  .feat-icon { margin: 0 auto 24px; }
   .feat-card h3 { font-size: 1.1rem; }
   .feat-card p { font-size: 0.9rem; margin-bottom: 16px; }
   
