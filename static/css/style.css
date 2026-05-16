@@ -1335,13 +1335,8 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
     justify-content: center;
     gap: 12px;
     margin: 0 auto 15px;
-    width: fit-content;
-    position: relative;
-  }
-  .footer .nav-logo::after {
-    content: "";
-    width: 28px;
-    display: block;
+    width: 100%;
+    padding-right: 40px; /* Counterbalance icon (28px) + gap (12px) to center text */
   }
   .footer .logo-icon {
     position: static;
