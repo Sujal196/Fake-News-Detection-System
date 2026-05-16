@@ -314,20 +314,21 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   justify-content: center;
   background: rgba(79, 70, 229, 0.1);
   border: 1px solid rgba(79, 70, 229, 0.2);
-  padding: 6px 40px; /* Symmetrical padding for text centering */
+  padding: 8px 50px; /* Increased length */
   border-radius: 30px;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #818cf8;
   margin-bottom: 24px;
   position: relative;
   width: fit-content;
+  white-space: nowrap;
 }
 
 .pulse-dot {
   position: absolute;
-  left: 16px;
-  width: 8px; height: 8px;
+  left: 18px; /* Adjusted for longer banner */
+  width: 10px; height: 10px; /* Slightly larger for visibility */
   background: #818cf8;
   border-radius: 50%;
   box-shadow: 0 0 0 0 rgba(129, 140, 248, 0.7);
@@ -1277,13 +1278,13 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .hero-sub { font-size: 1.1rem; line-height: 1.6; }
   .hero-badge {
     margin: 0 auto 24px;
-    padding: 8px 44px; 
-    font-size: 0.85rem;
+    padding: 8px 52px; 
+    font-size: 0.88rem;
     white-space: nowrap;
-    max-width: 90%;
+    max-width: 92%;
   }
   .hero-badge .pulse-dot {
-    left: 16px;
+    left: 20px;
   }
   .hero-badge::after { display: none; }
   
@@ -1353,12 +1354,12 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   
   .hero-title { font-size: 1.5rem; }
   .hero-badge { 
-    font-size: 0.65rem; 
-    padding: 4px 34px; 
+    font-size: 0.7rem; 
+    padding: 5px 38px; 
     white-space: nowrap;
-    max-width: 90%;
+    max-width: 92%;
   }
-  .hero-badge .pulse-dot { left: 12px; }
+  .hero-badge .pulse-dot { left: 14px; width: 8px; height: 8px; }
   .hero-badge::after { display: none; }
   
   .analytics-dash { padding: 16px; }
