@@ -927,6 +927,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   padding: 32px;
   border-radius: 20px;
   transition: var(--transition);
+  text-align: center;
 }
 
 .feat-card:hover {
@@ -941,7 +942,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 24px;
+  margin: 0 auto 24px;
 }
 
 .feat-icon svg { width: 24px; height: 24px; }
@@ -960,7 +961,10 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
 .feat-card p {
   color: var(--text-muted);
   font-size: 0.95rem;
-  margin-bottom: 24px;
+  margin: 0 auto 24px;
+  text-align: center;
+  text-wrap: balance;
+  line-height: 1.6;
 }
 
 .feat-tag {
@@ -1056,6 +1060,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   color: var(--text-muted);
   margin: 20px 0 30px;
   max-width: 400px;
+  font-size: 1.1rem;
 }
 
 .footer-badges {
