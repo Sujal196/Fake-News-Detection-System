@@ -988,7 +988,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   flex: 1;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  padding: 40px 30px;
+  padding: 24px 30px 40px;
   border-radius: 24px;
   position: relative;
   transition: var(--transition);
@@ -1002,7 +1002,8 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
 
 .step-num {
   position: absolute;
-  top: -15px; left: 30px;
+  top: -15px; left: 50%;
+  transform: translateX(-50%);
   background: var(--primary);
   color: white;
   width: 40px; height: 30px;
@@ -1016,17 +1017,24 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
 
 .step-emoji {
   font-size: 3rem;
-  margin-bottom: 20px;
+  margin-bottom: 8px;
+  text-align: center;
 }
 
 .step-card h3 {
   font-size: 1.3rem;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+  text-align: center;
 }
 
 .step-card p {
   color: var(--text-muted);
   font-size: 0.95rem;
+  text-align: justify;
+  letter-spacing: -0.2px;
+  word-spacing: -0.5px;
+  hyphens: auto;
+  -webkit-hyphens: auto;
 }
 
 .step-arrow {
@@ -1251,7 +1259,6 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   
   .steps-row { flex-direction: column; align-items: center; gap: 40px; }
   .step-card { width: 100%; max-width: 500px; text-align: left; }
-  .step-num { left: 30px; transform: none; }
   .step-arrow { transform: rotate(90deg); margin: 10px 0; }
   
   .result-top { flex-direction: column; gap: 24px; padding-bottom: 24px; text-align: center; }
@@ -1386,10 +1393,10 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   .feat-card h3 { font-size: 1.1rem; }
   .feat-card p { font-size: 0.9rem; margin: 0 0 16px 0; text-align: left; }
   
-  .step-card { padding: 32px 24px; }
-  .step-emoji { font-size: 2.5rem; margin-bottom: 16px; }
-  .step-card h3 { font-size: 1.15rem; }
-  .step-card p { font-size: 0.9rem; }
+  .step-card { padding: 20px 24px 32px; }
+  .step-emoji { font-size: 2.5rem; margin-bottom: 6px; }
+  .step-card h3 { font-size: 1.15rem; margin-bottom: 6px; }
+  .step-card p { font-size: 0.9rem; text-align: justify; letter-spacing: -0.2px; word-spacing: -0.5px; hyphens: auto; -webkit-hyphens: auto; }
   .step-arrow { font-size: 1.5rem; }
   
   .analyze-card { padding: 16px; border-radius: 16px; }
