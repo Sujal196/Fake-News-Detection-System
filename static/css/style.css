@@ -1029,7 +1029,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
 
 .step-card p {
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   text-align: justify;
   letter-spacing: -0.2px;
   word-spacing: -0.5px;
