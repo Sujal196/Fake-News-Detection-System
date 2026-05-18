@@ -169,22 +169,6 @@ class AdvancedFakeNewsTrainer:
                     'alpha': [0.1, 0.5, 1.0, 2.0],
                     'fit_prior': [True, False]
                 }
-            },
-            'Random Forest': {
-                'model': RandomForestClassifier(random_state=42, n_jobs=-1),
-                'params': {
-                    'n_estimators': [100, 200],
-                    'max_depth': [10, 20, None],
-                    'min_samples_split': [2, 5]
-                }
-            },
-            'Gradient Boosting': {
-                'model': GradientBoostingClassifier(random_state=42),
-                'params': {
-                    'n_estimators': [100, 200],
-                    'learning_rate': [0.05, 0.1],
-                    'max_depth': [3, 5]
-                }
             }
         }
         
@@ -348,14 +332,14 @@ class AdvancedFakeNewsTrainer:
         print("=" * 80)
         
         # Save best model
-        with open('models/best_model_large.pkl', 'wb') as f:
+        with open('models/final_model.pkl', 'wb') as f:
             pickle.dump(self.best_model, f)
-        print("✅ Best model saved as 'models/best_model_large.pkl'")
+        print("✅ Best model saved as 'models/final_model.pkl'")
         
         # Save vectorizer
-        with open('models/vectorizer_large.pkl', 'wb') as f:
+        with open('models/final_vectorizer.pkl', 'wb') as f:
             pickle.dump(self.vectorizer, f)
-        print("✅ Vectorizer saved as 'models/vectorizer_large.pkl'")
+        print("✅ Vectorizer saved as 'models/final_vectorizer.pkl'")
         
         # Save results
         with open('models/training_results.pkl', 'wb') as f:

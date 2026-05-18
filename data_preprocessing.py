@@ -46,6 +46,13 @@ class TextPreprocessor:
             
         text = text.lower()
         
+        # Remove publisher footprints (to fix ISOT dataset bias)
+        text = re.sub(r'^.*?\(reuters\)\s*-\s*', '', text)
+        text = re.sub(r'reuters', '', text)
+        
+        # Remove twitter handles
+        text = re.sub(r'@[a-zA-Z0-9_]+', '', text)
+        
         text = re.sub(r'http\S+|www\S+|https\S+', '', text, flags=re.MULTILINE)
         
         text = re.sub(r'<.*?>', '', text)

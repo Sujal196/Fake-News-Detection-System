@@ -64,17 +64,48 @@ class FakeNewsDetector:
         text_vector = self.vectorizer.transform([processed_text])
         
         prediction = self.best_model.predict(text_vector)[0]
-        
         probability = self.best_model.predict_proba(text_vector)[0]
+        
+        # --- Heuristic Adjustment for Generic Texts ---
+        # The ISOT dataset is heavily biased towards political news.
+        # To make it work well for generic texts (like science, health), we apply a heuristic.
+        text_lower = text.lower()
+        fake_indicators = ['shocking', 'secret', 'miracle', 'reveals', 'doctors hate', 'conspiracy', 'alien', 'cure all']
+        real_indicators = ['study', 'research', 'scientists', 'published', 'peer-reviewed', 'university', 'journal', 'clinical', 'analysis']
+        
+        fake_score = sum(1 for word in fake_indicators if word in text_lower)
+        real_score = sum(1 for word in real_indicators if word in text_lower)
+        
+        fake_prob = probability[0]
+        real_prob = probability[1]
+        
+        # Boost real probability if real indicators are present
+        if real_score > fake_score:
+            real_prob = min(0.95, real_prob + (real_score * 0.15))
+            fake_prob = 1.0 - real_prob
+            if real_prob > 0.5:
+                prediction = 1
+        # Boost fake probability if fake indicators are present
+        elif fake_score > real_score:
+            fake_prob = min(0.95, fake_prob + (fake_score * 0.15))
+            real_prob = 1.0 - fake_prob
+            if fake_prob > 0.5:
+                prediction = 0
+        
+        # Normalize just in case
+        total = fake_prob + real_prob
+        fake_prob /= total
+        real_prob /= total
+        # ---------------------------------------------
         
         explanation = self.generate_explanation(text, processed_text, text_vector, prediction)
         
         return {
             'prediction': 'Real News' if prediction == 1 else 'Fake News',
-            'confidence': max(probability),
+            'confidence': max(fake_prob, real_prob),
             'probabilities': {
-                'Fake News': probability[0],
-                'Real News': probability[1]
+                'Fake News': fake_prob,
+                'Real News': real_prob
             },
             'explanation': explanation
         }
