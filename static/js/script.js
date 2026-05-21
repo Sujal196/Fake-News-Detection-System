@@ -329,18 +329,34 @@ async function loadHistory() {
         if (!ts) return new Date();
         let clean = ts.trim();
 
+        // DB stores IST as: 2026-05-21 14:35:22
+        // Don't add T and Z, parse as IST directly
         if (!clean.includes('T')) {
-            clean = clean.replace(' ', 'T') + 'Z';
-        } else if (clean.includes('T') && !clean.includes('Z') && !clean.includes('+')) {
-            clean = clean + 'Z';
+            // Parse as IST local time (DB already stored in IST)
+            const parts = clean.split(' ');
+            const dateParts = parts[0].split('-');
+            const timeParts = parts[1].split(':');
+
+            let d = new Date(
+                parseInt(dateParts[0]),
+                parseInt(dateParts[1]) - 1,
+                parseInt(dateParts[2]),
+                parseInt(timeParts[0]),
+                parseInt(timeParts[1]),
+                parseInt(timeParts[2])
+            );
+
+            // Adjust for IST offset (subtract 5.5 hours to get UTC, then add back as local)
+            const offset = new Date(d.getTime()).getTimezoneOffset() * 60000;
+            const istOffset = 5.5 * 60 * 60000;
+            const utcTime = d.getTime() + offset + istOffset;
+
+            return new Date(utcTime);
+        } else {
+            let d = new Date(clean);
+            if (isNaN(d.getTime())) return new Date();
+            return d;
         }
-
-        let d = new Date(clean);
-        if (isNaN(d.getTime())) return new Date();
-
-        const utcTime = d.getTime();
-        const istTime = new Date(utcTime + (5.5 * 60 * 60 * 1000));
-        return istTime;
     }
 
     function renderList(list) {

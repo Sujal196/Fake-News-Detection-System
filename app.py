@@ -177,35 +177,55 @@ def predict():
 
         ist_timestamp = get_ist_time()
 
+        db_path = get_db_path()
+        print(f"Database path: {db_path}")
+        print(f"Database exists: {os.path.exists(db_path)}")
+
         try:
-            conn = sqlite3.connect(get_db_path())
+            conn = sqlite3.connect(db_path, timeout=10.0)
+            conn.isolation_level = None
             cursor = conn.cursor()
+
             cursor.execute(
                 "INSERT INTO history (input_text, prediction, confidence, timestamp) VALUES (?, ?, ?, ?)",
                 (text, result['prediction'], float(result['confidence']), ist_timestamp)
             )
+
             conn.commit()
-            print(f"✓ Saved to DB: {text[:50]}... at {ist_timestamp}")
+            cursor.close()
             conn.close()
+
+            print(f"✓ Saved to DB: {text[:50]}... | Prediction: {result['prediction']} | Time: {ist_timestamp}")
         except Exception as db_err:
-            print(f"✗ Database error: {db_err}")
+            print(f"✗ Database write error: {db_err}")
+            import traceback
+            traceback.print_exc()
 
         return jsonify(result)
     except Exception as e:
         print(f"✗ Prediction error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': 'Failed to analyze text'}), 500
 
 @app.route('/history', methods=['GET'])
 def history():
     try:
+        db_path = get_db_path()
         db_items = []
+
         try:
-            conn = sqlite3.connect(get_db_path())
-            conn.row_factory = sqlite3.Row
+            conn = sqlite3.connect(db_path, timeout=10.0)
+            conn.isolation_level = None
             cursor = conn.cursor()
-            cursor.execute("SELECT input_text, prediction, confidence, timestamp FROM history ORDER BY rowid DESC")
+
+            cursor.execute("SELECT input_text, prediction, confidence, timestamp FROM history ORDER BY id DESC")
             rows = cursor.fetchall()
+
+            cursor.close()
             conn.close()
+
+            print(f"✓ Fetched {len(rows)} records from database")
 
             for r in rows:
                 db_items.append({
@@ -215,10 +235,13 @@ def history():
                     'timestamp': r[3]
                 })
         except Exception as db_read_err:
-            print(f"Database read error: {db_read_err}")
+            print(f"✗ Database read error: {db_read_err}")
+            import traceback
+            traceback.print_exc()
             return jsonify([])
 
         if not db_items:
+            print("No data in database")
             return jsonify([])
 
         seen_texts = set()
@@ -232,10 +255,52 @@ def history():
         unique_items.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
         final_list = unique_items[:2]
 
+        print(f"✓ Returning {len(final_list)} latest items")
         return jsonify(final_list)
     except Exception as e:
-        print(f"History error: {e}")
+        print(f"✗ History error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify([])
+
+@app.route('/db-status', methods=['GET'])
+def db_status():
+    try:
+        db_path = get_db_path()
+        exists = os.path.exists(db_path)
+        size = os.path.getsize(db_path) if exists else 0
+
+        conn = sqlite3.connect(db_path, timeout=10.0)
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM history")
+        count = cursor.fetchone()[0]
+
+        cursor.execute("SELECT input_text, prediction, timestamp FROM history ORDER BY id DESC LIMIT 3")
+        recent = cursor.fetchall()
+        cursor.close()
+        conn.close()
+
+        recent_items = []
+        for r in recent:
+            recent_items.append({
+                'text': r[0][:50] + '...' if len(r[0]) > 50 else r[0],
+                'prediction': r[1],
+                'timestamp': r[2]
+            })
+
+        return jsonify({
+            'database_path': db_path,
+            'database_exists': exists,
+            'database_size_bytes': size,
+            'total_records': count,
+            'recent_3': recent_items,
+            'status': '✓ Working' if count > 0 else '⚠ Empty'
+        })
+    except Exception as e:
+        print(f"DB Status Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e), 'status': '✗ Error'}), 500
 
 @app.route('/sync-history', methods=['GET'])
 def sync_history():
