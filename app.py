@@ -12,9 +12,15 @@ app = Flask(__name__)
 detector = None
 preprocessor = None
 
+def get_db_path():
+    if os.environ.get('VERCEL') == '1':
+        return '/tmp/predictions.db'
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_dir, 'predictions.db')
+
 def init_db():
     try:
-        conn = sqlite3.connect('predictions.db')
+        conn = sqlite3.connect(get_db_path())
         cursor = conn.cursor()
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS history (
@@ -120,7 +126,7 @@ def predict():
             result = fallback_predict(text)
         
         try:
-            conn = sqlite3.connect('predictions.db')
+            conn = sqlite3.connect(get_db_path())
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT INTO history (input_text, prediction, confidence) VALUES (?, ?, ?)",
@@ -140,7 +146,7 @@ def predict():
 @app.route('/history', methods=['GET'])
 def history():
     try:
-        conn = sqlite3.connect('predictions.db')
+        conn = sqlite3.connect(get_db_path())
         cursor = conn.cursor()
         cursor.execute("SELECT id, input_text, prediction, confidence, timestamp FROM history ORDER BY id DESC LIMIT 50")
         rows = cursor.fetchall()

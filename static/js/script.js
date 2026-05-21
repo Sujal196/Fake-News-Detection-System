@@ -62,7 +62,7 @@ textArea.addEventListener('input', function () {
     this.style.height = (this.scrollHeight) + 'px';
 });
 
-document.querySelectorAll('.ex-tag').forEach(tag => {
+document.querySelectorAll('.ex-tag[data-example]').forEach(tag => {
     tag.addEventListener('click', () => {
         const type = tag.dataset.example;
         if (type === 'fake') {
@@ -95,6 +95,20 @@ form.addEventListener('submit', async (e) => {
         if (!response.ok) throw new Error('Analysis failed');
 
         const data = await response.json();
+        
+        try {
+            const localHistory = JSON.parse(localStorage.getItem('truthscan_history') || '[]');
+            localHistory.unshift({
+                text: text,
+                prediction: data.prediction,
+                confidence: data.confidence,
+                timestamp: new Date().toISOString()
+            });
+            localStorage.setItem('truthscan_history', JSON.stringify(localHistory.slice(0, 50)));
+        } catch (localErr) {
+            console.error(localErr);
+        }
+
         renderResult(data);
         loadHistory();
 
@@ -198,9 +212,9 @@ function renderResult(data) {
     explainContent.innerHTML = formatExplanation(explanation);
 }
 
-function showTagInsight(tag, insight) {
+function showTagInsight(element, tag, insight) {
     document.querySelectorAll('.ad-tag').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
+    element.classList.add('active');
 
     const res = document.getElementById('adInsightResult');
     if (!res) return;
@@ -292,13 +306,15 @@ async function loadHistory() {
     const historyContent = document.getElementById('historyContent');
     if (!historyContent) return;
 
+    let localData = [];
     try {
-        const response = await fetch('/history');
-        if (!response.ok) throw new Error('Failed to fetch history');
-        
-        const data = await response.json();
-        
-        if (data.length === 0) {
+        localData = JSON.parse(localStorage.getItem('truthscan_history') || '[]');
+    } catch (e) {
+        console.error(e);
+    }
+
+    function renderList(list) {
+        if (list.length === 0) {
             historyContent.innerHTML = `
                 <div style="text-align: center; padding: 30px; color: var(--text-muted);">
                     No predictions stored yet. Analyze an article above to begin.
@@ -308,14 +324,14 @@ async function loadHistory() {
         }
 
         let html = '';
-        data.forEach(item => {
+        list.forEach(item => {
             const isFake = item.prediction === 'Fake News';
             const badgeClass = isFake ? 'fake' : 'real';
             const confPct = Math.round(item.confidence * 100);
             
             let timeStr = '';
             try {
-                const date = new Date(item.timestamp + 'Z');
+                const date = new Date(item.timestamp);
                 timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             } catch (e) {
                 timeStr = item.timestamp;
@@ -333,13 +349,59 @@ async function loadHistory() {
             `;
         });
         historyContent.innerHTML = html;
+    }
+
+    if (localData.length > 0) {
+        renderList(localData);
+    }
+
+    try {
+        const response = await fetch('/history');
+        if (!response.ok) throw new Error('Database fetch failed');
+        
+        const dbData = await response.json();
+        
+        const mergedMap = new Map();
+        
+        dbData.forEach(item => {
+            const cleanText = item.text.trim();
+            const timestamp = item.timestamp.includes('Z') ? item.timestamp : item.timestamp + 'Z';
+            mergedMap.set(cleanText, {
+                text: cleanText,
+                prediction: item.prediction,
+                confidence: item.confidence,
+                timestamp: new Date(timestamp).toISOString()
+            });
+        });
+        
+        localData.forEach(item => {
+            const cleanText = item.text.trim();
+            if (!mergedMap.has(cleanText)) {
+                mergedMap.set(cleanText, {
+                    text: cleanText,
+                    prediction: item.prediction,
+                    confidence: item.confidence,
+                    timestamp: new Date(item.timestamp).toISOString()
+                });
+            }
+        });
+        
+        const mergedList = Array.from(mergedMap.values());
+        mergedList.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        const truncatedList = mergedList.slice(0, 50);
+        localStorage.setItem('truthscan_history', JSON.stringify(truncatedList));
+        
+        renderList(truncatedList);
     } catch (err) {
         console.error(err);
-        historyContent.innerHTML = `
-            <div style="text-align: center; padding: 30px; color: var(--fake);">
-                Failed to load analysis history.
-            </div>
-        `;
+        if (localData.length === 0) {
+            historyContent.innerHTML = `
+                <div style="text-align: center; padding: 30px; color: var(--text-muted);">
+                    No predictions stored yet. Analyze an article above to begin.
+                </div>
+            `;
+        }
     }
 }
 
