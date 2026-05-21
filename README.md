@@ -207,8 +207,8 @@ The system achieves competitive performance on test data:
 
 | Model               | Accuracy | Precision | Recall | F1-Score |
 |---------------------|----------|-----------|--------|----------|
-| Logistic Regression | 0.92     | 0.90      | 0.94   | 0.92     |
-| Naive Bayes         | 0.89     | 0.87      | 0.91   | 0.89     |
+| Logistic Regression | 99.44%   | 99.44%    | 99.44% | 99.44%   |
+| Naive Bayes         | 96.08%   | 96.08%    | 96.08% | 96.08%   |
 
 ## 🔧 Configuration
 
