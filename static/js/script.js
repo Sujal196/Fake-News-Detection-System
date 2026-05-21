@@ -96,6 +96,7 @@ form.addEventListener('submit', async (e) => {
 
         const data = await response.json();
         renderResult(data);
+        loadHistory();
 
     } catch (err) {
         console.error(err);
@@ -262,6 +263,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
+
+    loadHistory();
+
+    const refreshBtn = document.getElementById('refreshHistoryBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', loadHistory);
+    }
 });
 
 function showToast(msg, type = 'success') {
@@ -278,4 +286,68 @@ function showToast(msg, type = 'success') {
         toast.style.animation = 'slideOutRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards';
         setTimeout(() => toast.remove(), 300);
     }, 4000);
+}
+
+async function loadHistory() {
+    const historyContent = document.getElementById('historyContent');
+    if (!historyContent) return;
+
+    try {
+        const response = await fetch('/history');
+        if (!response.ok) throw new Error('Failed to fetch history');
+        
+        const data = await response.json();
+        
+        if (data.length === 0) {
+            historyContent.innerHTML = `
+                <div style="text-align: center; padding: 30px; color: var(--text-muted);">
+                    No predictions stored yet. Analyze an article above to begin.
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        data.forEach(item => {
+            const isFake = item.prediction === 'Fake News';
+            const badgeClass = isFake ? 'fake' : 'real';
+            const confPct = Math.round(item.confidence * 100);
+            
+            let timeStr = '';
+            try {
+                const date = new Date(item.timestamp + 'Z');
+                timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            } catch (e) {
+                timeStr = item.timestamp;
+            }
+
+            html += `
+                <div class="history-item">
+                    <div class="history-text" title="${escapeHtml(item.text)}">${escapeHtml(item.text)}</div>
+                    <div class="history-meta">
+                        <span class="history-badge ${badgeClass}">${item.prediction}</span>
+                        <span class="history-conf">${confPct}%</span>
+                        <span class="history-time">${timeStr}</span>
+                    </div>
+                </div>
+            `;
+        });
+        historyContent.innerHTML = html;
+    } catch (err) {
+        console.error(err);
+        historyContent.innerHTML = `
+            <div style="text-align: center; padding: 30px; color: var(--fake);">
+                Failed to load analysis history.
+            </div>
+        `;
+    }
+}
+
+function escapeHtml(text) {
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }

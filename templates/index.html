@@ -273,6 +273,27 @@
                     </div>
                 </div>
             </div>
+
+            <div id="historySection" class="history-section">
+                <div class="result-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+                        <h3 style="margin: 0; font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 24px; height: 24px; color: var(--primary);">
+                                <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Recent Analysis History
+                        </h3>
+                        <button id="refreshHistoryBtn" class="ex-tag real-tag" style="border: none; outline: none; padding: 8px 16px; border-radius: 8px;">
+                            Refresh History
+                        </button>
+                    </div>
+                    <div class="history-list" id="historyContent">
+                        <div style="text-align: center; padding: 30px; color: var(--text-muted);">
+                            Loading database history...
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 

@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 import os
 import pickle
 import sys
+import sqlite3
 from data_preprocessing import TextPreprocessor
 from ml_models import FakeNewsDetector
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -11,9 +12,27 @@ app = Flask(__name__)
 detector = None
 preprocessor = None
 
+def init_db():
+    try:
+        conn = sqlite3.connect('predictions.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                input_text TEXT,
+                prediction TEXT,
+                confidence REAL,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Failed to initialize database: {e}")
+
 def initialize_model():
     global detector, preprocessor
-    
+    init_db()
     try:
         base_dir = os.path.dirname(os.path.abspath(__file__))
         model_path = os.path.join(base_dir, 'models', 'final_model.pkl')
@@ -95,17 +114,51 @@ def predict():
         if len(text) < 10:
             return jsonify({'error': 'Text too short for accurate analysis'}), 400
         
-        
         if detector and preprocessor:
             result = detector.predict(text)
         else:
             result = fallback_predict(text)
         
+        try:
+            conn = sqlite3.connect('predictions.db')
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO history (input_text, prediction, confidence) VALUES (?, ?, ?)",
+                (text, result['prediction'], float(result['confidence']))
+            )
+            conn.commit()
+            conn.close()
+        except Exception as db_err:
+            print(f"Database error: {db_err}")
+            
         return jsonify(result)
         
     except Exception as e:
         print(f"Prediction error: {str(e)}")
         return jsonify({'error': 'Failed to analyze text'}), 500
+
+@app.route('/history', methods=['GET'])
+def history():
+    try:
+        conn = sqlite3.connect('predictions.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, input_text, prediction, confidence, timestamp FROM history ORDER BY id DESC LIMIT 50")
+        rows = cursor.fetchall()
+        conn.close()
+        
+        data = []
+        for r in rows:
+            data.append({
+                'id': r[0],
+                'text': r[1],
+                'prediction': r[2],
+                'confidence': r[3],
+                'timestamp': r[4]
+            })
+        return jsonify(data)
+    except Exception as e:
+        print(f"History error: {e}")
+        return jsonify({'error': 'Failed to retrieve history'}), 500
 
 @app.route('/health')
 def health_check():
