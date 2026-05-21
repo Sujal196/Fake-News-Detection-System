@@ -173,12 +173,50 @@ function renderResult(data) {
     }, 50);
 
     // Explanation Formatting
-    let html = explanation.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/\n\n/g, '</p><p>');
-    html = html.replace(/\n/g, '<br>');
-    if (!html.startsWith('<p>')) html = '<p>' + html + '</p>';
+    function formatExplanation(text) {
+        // Step 1: Split into lines
+        const lines = text.split('\n');
+        let html = '';
+        let inBulletList = false;
 
-    explainContent.innerHTML = html;
+        lines.forEach(line => {
+            const trimmed = line.trim();
+            if (!trimmed) {
+                // Blank line — close any open bullet list, start a paragraph break
+                if (inBulletList) {
+                    html += '</ul>';
+                    inBulletList = false;
+                }
+                html += '<div style="height:8px"></div>';
+                return;
+            }
+
+            // Convert **text** to <strong>text</strong>
+            const boldified = trimmed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+            if (trimmed.startsWith('•')) {
+                // Bullet point line
+                if (!inBulletList) {
+                    html += '<ul style="margin:6px 0 6px 0;padding-left:1.2em;list-style:none;">';
+                    inBulletList = true;
+                }
+                const content = boldified.replace(/^•\s*/, '');
+                html += `<li style="margin:4px 0;padding-left:0.2em;">• ${content}</li>`;
+            } else {
+                // Regular line — close bullet list if open
+                if (inBulletList) {
+                    html += '</ul>';
+                    inBulletList = false;
+                }
+                html += `<p style="margin:6px 0;line-height:1.6;">${boldified}</p>`;
+            }
+        });
+
+        if (inBulletList) html += '</ul>';
+        return html;
+    }
+
+    explainContent.innerHTML = formatExplanation(explanation);
 }
 
 // --- Analytics Dashboard Logic ---

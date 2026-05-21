@@ -242,12 +242,12 @@ class FakeNewsDetector:
             
         full_narrative = f"{opening} " + " ".join(narrative_points)
         
-        explanation = f"### 📰 Analysis Summary\n\n{full_narrative}\n\n"
+        explanation = f"📰 **Analysis Summary**\n\n{full_narrative}\n\n"
         
         if top_real_words:
-            explanation += "#### 🔍 Key Factual Indicators Detected:\n"
+            explanation += "🔍 **Key Factual Indicators Detected:**\n"
             for word in top_real_words[:5]:
-                explanation += f"- **{word.title()}** (strongly associated with verified reports)\n"
+                explanation += f"• **{word.title()}** — strongly associated with verified reports\n"
                 
         return explanation
 
@@ -344,15 +344,15 @@ class FakeNewsDetector:
         # Combine
         full_narrative = f"{opening} " + " ".join(narrative_points)
         
-        explanation = f"### ⚠️ Analysis Summary\n\n{full_narrative}\n\n"
+        explanation = f"⚠️ **Analysis Summary**\n\n{full_narrative}\n\n"
         
         if top_fake_words:
-            explanation += "#### 🔍 Key Risk Factors Detected:\n"
+            explanation += "🔍 **Key Risk Factors Detected:**\n"
             for word in top_fake_words[:5]:
-                explanation += f"- **{word.title()}** (statistically correlated with misinformation)\n"
+                explanation += f"• **{word.title()}** — statistically correlated with misinformation\n"
                 
         if top_real_words:
-            explanation += f"\n*Note: Although the text contains minor factual keywords like {', '.join(f'**{w}**' for w in top_real_words[:3])}, the overwhelming linguistic signal remains unreliable.*"
+            explanation += f"\nℹ️ **Note:** Although the text contains minor factual keywords like {', '.join(f'**{w}**' for w in top_real_words[:3])}, the overwhelming linguistic signal remains unreliable."
             
         return explanation
 
