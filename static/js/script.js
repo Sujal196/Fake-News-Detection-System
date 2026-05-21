@@ -187,21 +187,35 @@ function renderResult(data) {
                 return;
             }
 
-            const boldified = trimmed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            let parsedLine = trimmed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
-            if (trimmed.startsWith('•')) {
+            if (trimmed.startsWith('####')) {
+                if (inBulletList) {
+                    html += '</ul>';
+                    inBulletList = false;
+                }
+                const content = parsedLine.replace(/^####\s*/, '');
+                html += `<h4 style="margin:16px 0 8px 0;font-size:1.1rem;font-weight:600;color:var(--text);font-family:var(--font-display);">${content}</h4>`;
+            } else if (trimmed.startsWith('###')) {
+                if (inBulletList) {
+                    html += '</ul>';
+                    inBulletList = false;
+                }
+                const content = parsedLine.replace(/^###\s*/, '');
+                html += `<h3 style="margin:20px 0 10px 0;font-size:1.25rem;font-weight:700;color:var(--primary);font-family:var(--font-display);">${content}</h3>`;
+            } else if (trimmed.startsWith('•') || trimmed.startsWith('-')) {
                 if (!inBulletList) {
                     html += '<ul style="margin:6px 0 6px 0;padding-left:1.2em;list-style:none;">';
                     inBulletList = true;
                 }
-                const content = boldified.replace(/^•\s*/, '');
-                html += `<li style="margin:4px 0;padding-left:0.2em;">• ${content}</li>`;
+                const content = parsedLine.replace(/^[•-]\s*/, '');
+                html += `<li style="margin:6px 0;padding-left:0.2em;line-height:1.5;position:relative;"><span style="color:var(--primary);margin-right:8px;">•</span>${content}</li>`;
             } else {
                 if (inBulletList) {
                     html += '</ul>';
                     inBulletList = false;
                 }
-                html += `<p style="margin:6px 0;line-height:1.6;">${boldified}</p>`;
+                html += `<p style="margin:8px 0;line-height:1.7;color:var(--text-muted);font-size:0.95rem;">${parsedLine}</p>`;
             }
         });
 
@@ -284,6 +298,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (refreshBtn) {
         refreshBtn.addEventListener('click', loadHistory);
     }
+
+    setInterval(() => {
+        if (document.visibilityState === 'visible') {
+            loadHistory();
+        }
+    }, 15000);
 });
 
 function showToast(msg, type = 'success') {
@@ -313,6 +333,30 @@ async function loadHistory() {
         console.error(e);
     }
 
+    function parseTimestamp(ts) {
+        if (!ts) return new Date();
+        let clean = ts.trim();
+        if (!clean.includes('T') && !clean.includes('Z') && !clean.includes('+') && clean.includes(' ') && clean.includes('-')) {
+            clean = clean.replace(' ', 'T') + 'Z';
+        } else if (clean.includes('T') && !clean.includes('Z') && !clean.includes('+')) {
+            clean = clean + 'Z';
+        }
+        const d = new Date(clean);
+        return isNaN(d.getTime()) ? new Date() : d;
+    }
+
+    function formatIST(date) {
+        const istTime = new Date(date.getTime() + 19800000);
+        const hours = istTime.getUTCHours();
+        const minutes = istTime.getUTCMinutes();
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        let displayHour = hours % 12;
+        displayHour = displayHour ? displayHour : 12;
+        const displayHourStr = displayHour < 10 ? '0' + displayHour : displayHour;
+        const displayMinuteStr = minutes < 10 ? '0' + minutes : minutes;
+        return `${displayHourStr}:${displayMinuteStr} ${ampm} IST`;
+    }
+
     function renderList(list) {
         if (list.length === 0) {
             historyContent.innerHTML = `
@@ -331,8 +375,8 @@ async function loadHistory() {
             
             let timeStr = '';
             try {
-                const date = new Date(item.timestamp);
-                timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const date = parseTimestamp(item.timestamp);
+                timeStr = formatIST(date);
             } catch (e) {
                 timeStr = item.timestamp;
             }
@@ -365,23 +409,24 @@ async function loadHistory() {
         
         dbData.forEach(item => {
             const cleanText = item.text.trim();
-            const timestamp = item.timestamp.includes('Z') ? item.timestamp : item.timestamp + 'Z';
+            const dateObj = parseTimestamp(item.timestamp);
             mergedMap.set(cleanText, {
                 text: cleanText,
                 prediction: item.prediction,
                 confidence: item.confidence,
-                timestamp: new Date(timestamp).toISOString()
+                timestamp: dateObj.toISOString()
             });
         });
         
         localData.forEach(item => {
             const cleanText = item.text.trim();
             if (!mergedMap.has(cleanText)) {
+                const dateObj = parseTimestamp(item.timestamp);
                 mergedMap.set(cleanText, {
                     text: cleanText,
                     prediction: item.prediction,
                     confidence: item.confidence,
-                    timestamp: new Date(item.timestamp).toISOString()
+                    timestamp: dateObj.toISOString()
                 });
             }
         });
