@@ -175,50 +175,52 @@ class FakeNewsDetector:
                                     'journal', 'clinical', 'research', 'scientists']
                         if w in text_lower]
         numbers = re.findall(r'\b\d+[\.,]?\d*\s*(?:percent|%|billion|million|thousand|points?|basis points?)?\b', text_lower)
-        quotes = re.findall(r'"([^"]{10,80})"', text)
-        tone_register = "The text maintains a high-density informational register characterized by professional neutrality and standard journalistic discourse. The grammatical syntax avoids subjective modifiers or emotionally amplified predicates, adopting instead a passive and descriptive stance typical of reportage. Sentiment analysis of the document indicates a highly constrained emotional range, which aligns with standard protocols for factual communication and news dissemination."
+
+        keyword_analysis = "The article uses credible, evidence-based terminology typical of legitimate news reporting."
+        if top_real_words:
+            word_list = ", ".join(f"**{w}**" for w in top_real_words[:3])
+            keyword_analysis = f"Strong authentic indicators detected: {word_list}. These terms correlate with factual, research-backed content."
+
+        source_analysis = "The text references reliable sources and established institutions."
         if institutions:
             inst_list = ", ".join(i.title() for i in institutions[:3])
-            source_attribution = f"Source validation indicates robust, structural references to established public or academic entities (specifically: {inst_list}). The inclusion of these administrative and scientific reference frames establishes a clear chain of custody for the assertions made. Furthermore, there is explicit contextual framing around these citations rather than isolated declarations."
-        else:
-            source_attribution = "The text anchors its narrative within verifiable reporting contexts, employing standard source attribution structures. Although explicit public agency titles are minimized, the underlying information relies on structured descriptions of public events, policy dynamics, or empirical observations."
-        if quotes:
-            source_attribution += f" The citation profile is strengthened by the inclusion of direct speech attribution (e.g., '\"{quotes[0][:50]}...\u2019), which allows for independent verification of source declarations."
+            source_analysis = f"References established sources: {inst_list}. Clear attribution to credible organizations enhances reliability."
+
+        numerical_analysis = ""
         if numbers:
-            source_attribution += f" Statistical grounding is reinforced by the presence of empirical quantitative descriptors (e.g., '{numbers[0]}'), which serve to concrete the claims being reported."
-        word_str = ", ".join(f"**{w}**" for w in top_real_words[:4]) if top_real_words else "standard factual lexemes"
-        algorithmic_rationale = f"At the feature level, the machine learning classifier identified a high density of positive lexical indicators, notably {word_str}. Within the TF-IDF vector space, these terms exhibit strong statistical correlations with verified, high-integrity journalism databases. The probability distribution reflects this linguistic alignment, designating the text as legitimate news based on the low log-likelihood of clickbait structures."
-        return f"### Tone & Tone Register\n\n{tone_register}\n\n### Source & Attribution Verification\n\n{source_attribution}\n\n### Algorithmic Rationale\n\n{algorithmic_rationale}"
+            numerical_analysis = f"\nSpecific data points included (e.g., {numbers[0]}), which support factual claims and aid verification."
+
+        return f"### Content Analysis\n\n{keyword_analysis}\n\n### Source Verification\n\n{source_analysis}{numerical_analysis}\n\n### Classification Confidence\n\nThe article matches patterns of verified, legitimate journalism. High confidence in real news classification based on linguistic markers and information structure."
 
     def _generate_fake_news_explanation(self, text, top_fake_words, top_real_words):
         import re
         text_lower = text.lower()
-        sensational_map = {
-            'shocking': 'designed to provoke acute emotional response',
-            'miracle': 'promising unsubstantiated solutions',
-            'secret': 'constructing a conspiracy narrative',
-            'exposed': 'deploying aggressive expository framing',
-            'cover-up': 'suggesting structural conspiracies without evidentiary support',
-            'hoax': 'generating alarmist public skepticism',
-            'cure': 'making medical claims lacking verified clinical backing',
-            'alien': 'introducing extraordinary anomalies',
-            'banned': 'implying censorship to incite mistrust',
-            'revealed': 'framing standard events as dramatic revelations',
-            'truth': 'polarizing the target audience against mainstream records',
+        sensational_indicators = {
+            'shocking': 'sensationalized attention-grabbing',
+            'miracle': 'unsubstantiated solution claims',
+            'secret': 'conspiracy narrative framing',
+            'exposed': 'alarmist dramatic language',
+            'cover-up': 'unverified conspiracy theory',
+            'hoax': 'delegitimizing framing',
+            'cure': 'unproven medical claims',
+            'banned': 'censorship implication for engagement',
+            'revealed': 'false dramatic framing of routine events',
         }
-        triggered = [sensational_map[w] for w in sensational_map if w in text_lower]
-        exaggerations = ['100%', 'guaranteed', 'overnight', 'instantly', 'always', 'never fails',
-                          'doctors hate', "they don't want", "before it's deleted", 'share this']
-        found_exaggerations = [e for e in exaggerations if e in text_lower]
-        tone_register = "The document features a sensationalized tone register that relies heavily on emotive predicates, exclamation frames, or clickbait-style structures. The linguistic syntax is optimized to evoke immediate affective responses (e.g. alarm, surprise, or mistrust) rather than providing objective reportage. The writing uses hyperbolic adjectives and speculative modals that diverge significantly from standard professional journalism."
-        if triggered:
-            tone_register += " Specifically, the presence of terms " + ", ".join(f"'{t}'" for t in triggered[:2]) + " highlights an intentional strategy to dramatize the content."
-        source_attribution = "The source verification profile shows a critical deficit of reliable, named institutional or scientific citations. The claims are presented as unverified, self-referential, or anonymous assertions, lacking peer-reviewed evidence or established organizational backing. There is an absence of formal direct quotes from accountable spokespersons or public officials."
-        if found_exaggerations:
-            source_attribution += f" The text utilizes exaggerated semantic cues (e.g., " + ", ".join(f"'{e}'" for e in found_exaggerations[:2]) + ") to bypass critical cognitive evaluation, presenting speculative claims as absolute facts."
-        word_str = ", ".join(f"**{w}**" for w in top_fake_words[:4]) if top_fake_words else "unreliable lexemes"
-        algorithmic_rationale = f"From an algorithmic perspective, the TF-IDF feature extractor identified a high frequency of diagnostic risk factors, including {word_str}. In the underlying machine learning model, these terms hold significant weight within the classification space of known clickbait and misinformation datasets. Even if minor factual markers are present, the overall text vector lies deep within the statistical boundaries of fabricated news."
-        return f"### Tone & Tone Register\n\n{tone_register}\n\n### Source & Attribution Verification\n\n{source_attribution}\n\n### Algorithmic Rationale\n\n{algorithmic_rationale}"
+
+        detected_tactics = [sensational_indicators[w] for w in sensational_indicators if w in text_lower]
+
+        keyword_analysis = "Clickbait indicators detected in the article text."
+        if top_fake_words:
+            word_list = ", ".join(f"**{w}**" for w in top_fake_words[:3])
+            keyword_analysis = f"Red flags identified: {word_list}. These terms frequently appear in unreliable content."
+
+        tactics_text = ""
+        if detected_tactics:
+            tactics_text = f"\n\n### Manipulation Tactics\n\n• {detected_tactics[0]}\n" + "".join(f"• {t}\n" for t in detected_tactics[1:3])
+
+        source_analysis = "Limited or absent credible source attribution. Claims lack verification from established organizations."
+
+        return f"### Content Analysis\n\n{keyword_analysis}\n\n### Source Verification\n\n{source_analysis}{tactics_text}\n\n### Classification Confidence\n\nThe article exhibits patterns consistent with misinformation. The combination of sensationalized language and weak sourcing indicates high probability of fake news."
 
 
     def save_model(self, model_path, vectorizer_path):

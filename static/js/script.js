@@ -21,6 +21,17 @@ const navbar = document.getElementById('navbar');
 const root = document.documentElement;
 const savedTheme = localStorage.getItem('theme');
 
+function formatIST(date) {
+    if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+        return '';
+    }
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const ampm = date.getHours() >= 12 ? 'pm' : 'am';
+    const displayHour = date.getHours() % 12 || 12;
+    return `${String(displayHour).padStart(2, '0')}:${minutes} ${ampm}`;
+}
+
 if (savedTheme) {
     root.setAttribute('data-theme', savedTheme);
 } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
@@ -183,11 +194,11 @@ function renderResult(data) {
                     html += '</ul>';
                     inBulletList = false;
                 }
-                html += '<div style="height:8px"></div>';
+                html += '<div style="height:12px"></div>';
                 return;
             }
 
-            let parsedLine = trimmed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            let parsedLine = trimmed.replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--primary);font-weight:600;">$1</strong>');
 
             if (trimmed.startsWith('####')) {
                 if (inBulletList) {
@@ -195,27 +206,27 @@ function renderResult(data) {
                     inBulletList = false;
                 }
                 const content = parsedLine.replace(/^####\s*/, '');
-                html += `<h4 style="margin:16px 0 8px 0;font-size:1.1rem;font-weight:600;color:var(--text);font-family:var(--font-display);">${content}</h4>`;
+                html += `<h4 style="margin:16px 0 10px 0;font-size:1rem;font-weight:600;color:var(--text);font-family:var(--font-display);text-transform:uppercase;letter-spacing:0.5px;">${content}</h4>`;
             } else if (trimmed.startsWith('###')) {
                 if (inBulletList) {
                     html += '</ul>';
                     inBulletList = false;
                 }
                 const content = parsedLine.replace(/^###\s*/, '');
-                html += `<h3 style="margin:20px 0 10px 0;font-size:1.25rem;font-weight:700;color:var(--primary);font-family:var(--font-display);">${content}</h3>`;
+                html += `<h3 style="margin:20px 0 12px 0;font-size:1.15rem;font-weight:700;color:var(--primary);font-family:var(--font-display);border-bottom:2px solid var(--primary);padding-bottom:8px;">${content}</h3>`;
             } else if (trimmed.startsWith('•') || trimmed.startsWith('-')) {
                 if (!inBulletList) {
-                    html += '<ul style="margin:6px 0 6px 0;padding-left:1.2em;list-style:none;">';
+                    html += '<ul style="margin:8px 0 8px 0;padding-left:1.5em;list-style:none;">';
                     inBulletList = true;
                 }
                 const content = parsedLine.replace(/^[•-]\s*/, '');
-                html += `<li style="margin:6px 0;padding-left:0.2em;line-height:1.5;position:relative;"><span style="color:var(--primary);margin-right:8px;">•</span>${content}</li>`;
+                html += `<li style="margin:8px 0;padding-left:0;line-height:1.6;position:relative;color:var(--text-muted);"><span style="color:var(--primary);margin-right:10px;font-weight:600;">▸</span>${content}</li>`;
             } else {
                 if (inBulletList) {
                     html += '</ul>';
                     inBulletList = false;
                 }
-                html += `<p style="margin:8px 0;line-height:1.7;color:var(--text-muted);font-size:0.95rem;">${parsedLine}</p>`;
+                html += `<p style="margin:10px 0;line-height:1.7;color:var(--text-muted);font-size:0.96rem;">${parsedLine}</p>`;
             }
         });
 
@@ -296,14 +307,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const refreshBtn = document.getElementById('refreshHistoryBtn');
     if (refreshBtn) {
-        refreshBtn.addEventListener('click', loadHistory);
+        refreshBtn.addEventListener('click', async () => {
+            refreshBtn.style.opacity = '0.6';
+            refreshBtn.style.pointerEvents = 'none';
+            await loadHistory();
+            refreshBtn.style.opacity = '1';
+            refreshBtn.style.pointerEvents = 'auto';
+        });
     }
 
     setInterval(() => {
         if (document.visibilityState === 'visible') {
             loadHistory();
         }
-    }, 15000);
+    }, 8000);
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            loadHistory();
+        }
+    });
 });
 
 function showToast(msg, type = 'success') {
@@ -326,39 +349,29 @@ async function loadHistory() {
     const historyContent = document.getElementById('historyContent');
     if (!historyContent) return;
 
-    let localData = [];
-    try {
-        localData = JSON.parse(localStorage.getItem('truthscan_history') || '[]');
-    } catch (e) {
-        console.error(e);
-    }
-
     function parseTimestamp(ts) {
         if (!ts) return new Date();
+
         let clean = ts.trim();
-        if (!clean.includes('T') && !clean.includes('Z') && !clean.includes('+') && clean.includes(' ') && clean.includes('-')) {
+
+        if (!clean.includes('T')) {
             clean = clean.replace(' ', 'T') + 'Z';
         } else if (clean.includes('T') && !clean.includes('Z') && !clean.includes('+')) {
             clean = clean + 'Z';
         }
-        const d = new Date(clean);
-        return isNaN(d.getTime()) ? new Date() : d;
-    }
 
-    function formatIST(date) {
-        const istTime = new Date(date.getTime() + 19800000);
-        const hours = istTime.getUTCHours();
-        const minutes = istTime.getUTCMinutes();
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-        let displayHour = hours % 12;
-        displayHour = displayHour ? displayHour : 12;
-        const displayHourStr = displayHour < 10 ? '0' + displayHour : displayHour;
-        const displayMinuteStr = minutes < 10 ? '0' + minutes : minutes;
-        return `${displayHourStr}:${displayMinuteStr} ${ampm} IST`;
+        let d = new Date(clean);
+        if (isNaN(d.getTime())) {
+            d = new Date();
+        }
+
+        const utcTime = d.getTime();
+        const istTime = new Date(utcTime + (5.5 * 60 * 60 * 1000));
+        return istTime;
     }
 
     function renderList(list) {
-        if (list.length === 0) {
+        if (!list || list.length === 0) {
             historyContent.innerHTML = `
                 <div style="text-align: center; padding: 30px; color: var(--text-muted);">
                     No predictions stored yet. Analyze an article above to begin.
@@ -369,23 +382,25 @@ async function loadHistory() {
 
         let html = '';
         list.forEach(item => {
+            if (!item || !item.text) return;
+
             const isFake = item.prediction === 'Fake News';
             const badgeClass = isFake ? 'fake' : 'real';
-            const confPct = Math.round(item.confidence * 100);
-            
+            const confPct = Math.round((item.confidence || 0) * 100);
+
             let timeStr = '';
             try {
                 const date = parseTimestamp(item.timestamp);
                 timeStr = formatIST(date);
             } catch (e) {
-                timeStr = item.timestamp;
+                timeStr = '';
             }
 
             html += `
                 <div class="history-item">
                     <div class="history-text" title="${escapeHtml(item.text)}">${escapeHtml(item.text)}</div>
                     <div class="history-meta">
-                        <span class="history-badge ${badgeClass}">${item.prediction}</span>
+                        <span class="history-badge ${badgeClass}">${item.prediction || 'Unknown'}</span>
                         <span class="history-conf">${confPct}%</span>
                         <span class="history-time">${timeStr}</span>
                     </div>
@@ -395,58 +410,34 @@ async function loadHistory() {
         historyContent.innerHTML = html;
     }
 
-    if (localData.length > 0) {
-        renderList(localData);
-    }
-
     try {
         const response = await fetch('/history');
         if (!response.ok) throw new Error('Database fetch failed');
-        
+
         const dbData = await response.json();
-        
-        const mergedMap = new Map();
-        
-        dbData.forEach(item => {
-            const cleanText = item.text.trim();
-            const dateObj = parseTimestamp(item.timestamp);
-            mergedMap.set(cleanText, {
-                text: cleanText,
-                prediction: item.prediction,
-                confidence: item.confidence,
-                timestamp: dateObj.toISOString()
-            });
-        });
-        
-        localData.forEach(item => {
-            const cleanText = item.text.trim();
-            if (!mergedMap.has(cleanText)) {
-                const dateObj = parseTimestamp(item.timestamp);
-                mergedMap.set(cleanText, {
-                    text: cleanText,
-                    prediction: item.prediction,
-                    confidence: item.confidence,
-                    timestamp: dateObj.toISOString()
-                });
-            }
-        });
-        
-        const mergedList = Array.from(mergedMap.values());
-        mergedList.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        
-        const truncatedList = mergedList.slice(0, 50);
+
+        if (!dbData || dbData.length === 0) {
+            renderList([]);
+            localStorage.setItem('truthscan_history', JSON.stringify([]));
+            return;
+        }
+
+        const cleanedData = dbData.map(item => ({
+            text: item.text || '',
+            prediction: item.prediction || 'Unknown',
+            confidence: typeof item.confidence === 'number' ? item.confidence : 0,
+            timestamp: item.timestamp || new Date().toISOString()
+        })).filter(item => item.text.trim() !== '');
+
+        cleanedData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        const truncatedList = cleanedData.slice(0, 50);
         localStorage.setItem('truthscan_history', JSON.stringify(truncatedList));
-        
+
         renderList(truncatedList);
     } catch (err) {
         console.error(err);
-        if (localData.length === 0) {
-            historyContent.innerHTML = `
-                <div style="text-align: center; padding: 30px; color: var(--text-muted);">
-                    No predictions stored yet. Analyze an article above to begin.
-                </div>
-            `;
-        }
+        renderList([]);
     }
 }
 

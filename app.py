@@ -19,7 +19,8 @@ preprocessor = None
 KVDB_URL = "https://kvdb.io/YG9gdzbbU4PfdDAWHFmRNd/history"
 
 def get_ist_time():
-    return datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    ist_tz = timezone(timedelta(hours=5, minutes=30))
+    return datetime.now(ist_tz).strftime('%Y-%m-%d %H:%M:%S')
 
 def sync_to_kvdb(new_item):
     try:
@@ -247,10 +248,39 @@ def history():
                 print(f"Failed to sync merged data back to kvdb: {sync_err}")
             return jsonify(merged_list)
         else:
+            db_items.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
             return jsonify(db_items)
     except Exception as e:
         print(f"History error: {e}")
         return jsonify({'error': 'Failed to retrieve history'}), 500
+
+@app.route('/sync-history', methods=['GET'])
+def sync_history():
+    try:
+        db_items = []
+        try:
+            conn = sqlite3.connect(get_db_path())
+            cursor = conn.cursor()
+            cursor.execute("SELECT input_text, prediction, confidence, timestamp FROM history ORDER BY id DESC LIMIT 100")
+            rows = cursor.fetchall()
+            conn.close()
+            for r in rows:
+                db_items.append({
+                    'text': r[0],
+                    'prediction': r[1],
+                    'confidence': r[2],
+                    'timestamp': r[3]
+                })
+        except Exception as db_err:
+            print(f"Sync read error: {db_err}")
+
+        return jsonify({
+            'local_history': db_items,
+            'timestamp': get_ist_time()
+        })
+    except Exception as e:
+        print(f"Sync error: {e}")
+        return jsonify({'error': 'Sync failed'}), 500
 
 @app.route('/health')
 def health_check():
