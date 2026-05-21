@@ -96,8 +96,7 @@ class AdvancedFakeNewsTrainer:
         # Combine features
         processed_df['combined_text'] = (
             processed_df['title'].fillna('') + ' ' + 
-            processed_df['text'].fillna('') + ' ' + 
-            processed_df['subject'].fillna('')
+            processed_df['text'].fillna('')
         )
         
         # Apply text preprocessing
@@ -126,10 +125,10 @@ class AdvancedFakeNewsTrainer:
         
         # Optimized parameters for large dataset
         self.vectorizer = TfidfVectorizer(
-            max_features=50000,  # Increased for large dataset
+            max_features=10000,
             ngram_range=(1, 3),  # Unigrams, bigrams, trigrams
-            min_df=2,  # Minimum document frequency
-            max_df=0.85,  # Maximum document frequency
+            min_df=5,  # Increased to ignore extremely rare typos/words
+            max_df=0.7,  # Adjusted to ignore very common artifacts
             sublinear_tf=True,
             stop_words='english',
             analyzer='word'

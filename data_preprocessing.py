@@ -44,10 +44,12 @@ class TextPreprocessor:
         if not isinstance(text, str):
             return ""
             
+        # Strip datelines like "WASHINGTON (Reuters) - " or "LONDON - " before lowercasing
+        text = re.sub(r'^[a-zA-Z\s]+(?:\([a-zA-Z\s]+\))?\s*[-—]\s*', '', text)
+        
         text = text.lower()
         
-        # Remove publisher footprints (to fix ISOT dataset bias)
-        text = re.sub(r'^.*?\(reuters\)\s*-\s*', '', text)
+        # Remove publisher footprints
         text = re.sub(r'reuters', '', text)
         
         # Remove twitter handles
@@ -92,23 +94,10 @@ def load_and_preprocess_data(file_path=None):
     if file_path and pd.io.common.file_exists(file_path):
         df = pd.read_csv(file_path)
         
-        # Handle multi-feature dataset with title, text, subject, date
+        # Handle multi-feature dataset with title, text
         if 'title' in df.columns and 'text' in df.columns:
             # Combine title and text for better feature extraction
-            df['combined_text'] = df['title'].fillna('') + ' ' + df['text'].fillna('')
-            
-            # Add subject as additional context if available
-            if 'subject' in df.columns:
-                df['combined_text'] = df['subject'].fillna('') + ' ' + df['combined_text']
-            
-            # Extract date features if available
-            if 'date' in df.columns:
-                df['date_features'] = extract_date_features(df['date'])
-            else:
-                df['date_features'] = ''
-                
-            # Final combined text
-            df['final_text'] = df['combined_text'] + ' ' + df['date_features']
+            df['final_text'] = df['title'].fillna('') + ' ' + df['text'].fillna('')
             
         elif 'text' in df.columns:
             # If only text column exists
@@ -127,32 +116,14 @@ def load_and_preprocess_data(file_path=None):
     
     return df
 
-def extract_date_features(date_series):
-    """Extract useful features from date column"""
-    try:
-        # Convert to datetime if not already
-        dates = pd.to_datetime(date_series, errors='coerce')
-        
-        # Extract temporal features
-        features = []
-        for date in dates:
-            if pd.notna(date):
-                # Add temporal context as text
-                temporal_info = f"year_{date.year} month_{date.month} day_{date.weekday()}"
-                features.append(temporal_info)
-            else:
-                features.append('')
-        return features
-    except:
-        return [''] * len(date_series)
 
-def extract_features_tfidf(texts, max_features=50000):
+def extract_features_tfidf(texts, max_features=10000):
     """Optimized TF-IDF for large datasets"""
     vectorizer = TfidfVectorizer(
         max_features=max_features,
         ngram_range=(1, 3),
-        min_df=2,  # Increased for large dataset
-        max_df=0.85,  # Adjusted for large dataset
+        min_df=5,  # Increased to ignore extremely rare typos/words
+        max_df=0.7,  # Adjusted to ignore very common artifacts
         sublinear_tf=True,
         stop_words='english',
         analyzer='word'

@@ -139,93 +139,223 @@ class FakeNewsDetector:
             fake_probs = real_probs = [0] * len(feature_names)
         
         feature_indices = text_vector.indices
-        present_features = []
+        tfidf_values = text_vector.data  # actual TF-IDF weight of each word in this input
         
-        for idx in feature_indices:
+        present_features = []
+        for i, idx in enumerate(feature_indices):
             if idx < len(feature_names):
                 feature_name = feature_names[idx]
+                tfidf_weight = tfidf_values[i]
                 fake_score = fake_probs[idx]
                 real_score = real_probs[idx]
-                present_features.append((feature_name, fake_score, real_score))
+                # Combined influence = model weight * how prominently the word appears
+                fake_influence = fake_score * tfidf_weight
+                real_influence = real_score * tfidf_weight
+                present_features.append((feature_name, fake_influence, real_influence))
         
         if prediction == 1:
             present_features.sort(key=lambda x: x[2], reverse=True)
-        else:  # Fake News
+            top_real_words = [f[0] for f in present_features[:8] if f[2] > 0]
+            top_fake_words = [f[0] for f in sorted(present_features, key=lambda x: x[1], reverse=True)[:3] if f[1] > 0]
+            explanation = self._generate_real_news_explanation(original_text, top_real_words, top_fake_words)
+        else:
             present_features.sort(key=lambda x: x[1], reverse=True)
-        
-        if prediction == 1:
-            explanation = self._generate_real_news_explanation(original_text, present_features[:5])
-        else:  # Fake News
-            explanation = self._generate_fake_news_explanation(original_text, present_features[:5])
+            top_fake_words = [f[0] for f in present_features[:8] if f[1] > 0]
+            top_real_words = [f[0] for f in sorted(present_features, key=lambda x: x[2], reverse=True)[:3] if f[2] > 0]
+            explanation = self._generate_fake_news_explanation(original_text, top_fake_words, top_real_words)
         
         return explanation
     
-    def _generate_real_news_explanation(self, text, important_features):
+    def _generate_real_news_explanation(self, text, top_real_words, top_fake_words):
+        import re
+        text_lower = text.lower()
         
-        credible_indicators = []
-        for feature, fake_score, real_score in important_features:
-            if feature in ['study', 'research', 'scientist', 'university', 'published', 'journal', 'clinical', 'trial', 'analysis', 'federal', 'government', 'report', 'data', 'evidence']:
-                credible_indicators.append(feature)
+        # 1. Select a dynamic opening sentence based on a hash of the text to ensure variety across examples
+        openings = [
+            "This text exhibits the linguistic structure and neutral delivery typical of professional, objective reporting.",
+            "The model classified this as legitimate news due to its factual framing and objective presentation of events.",
+            "Linguistic analysis of the vocabulary and writing style shows strong indicators of accountable journalism.",
+            "The phrasing and word usage pattern closely match the typical lexical structure found in verified, official reports."
+        ]
+        idx = sum(ord(c) for c in text[:30]) % len(openings)
+        opening = openings[idx]
         
-        has_institution = any(word in text.lower() for word in ['university', 'institute', 'organization', 'agency', 'department'])
-        has_numbers = any(char.isdigit() for char in text)
-        has_specifics = any(word in text.lower() for word in ['percent', 'billion', 'million', 'study', 'research'])
+        # 2. Extract specific features
+        institutions = [w for w in ['federal reserve', 'congress', 'senate', 'president',
+                                    'minister', 'parliament', 'court', 'department',
+                                    'university', 'institute', 'agency', 'organization',
+                                    'commission', 'authority', 'committee', 'bureau']
+                        if w in text_lower]
+        numbers = re.findall(r'\b\d+[\.,]?\d*\s*(?:percent|%|billion|million|thousand|points?|basis points?)?\b', text_lower)
+        quotes = re.findall(r'"([^"]{10,80})"', text)
         
-        explanation = "This text was classified as **Real News** because:\n\n"
+        narrative_points = []
         
-        if credible_indicators:
-            explanation += f"📊 **Credible Indicators Found**: The text contains scientific and factual language such as '{', '.join(credible_indicators[:3])}', which are commonly associated with legitimate news sources.\n\n"
+        # Point A: Key model-weighted words
+        if top_real_words:
+            word_str = ', '.join(f'"{w}"' for w in top_real_words[:4])
+            narrative_points.append(
+                f"Specifically, the model identified key terms like {word_str}, which are statistically prevalent in genuine journalistic databases."
+            )
+            
+        # Point B: Official institutions
+        if institutions:
+            inst_str = ', '.join(i.title() for i in institutions[:3])
+            inst_phrases = [
+                f"It references official entities or authoritative bodies such as {inst_str}, which are common anchor points of verified news.",
+                f"The mention of established organizations (like {inst_str}) points to structured source attribution.",
+                f"By citing official entities like {inst_str}, the text grounds itself in verifiable public institutions."
+            ]
+            narrative_points.append(inst_phrases[idx % len(inst_phrases)])
+            
+        # Point C: Data & Statistics
+        if numbers:
+            num_str = numbers[0].strip()
+            num_phrases = [
+                f"The presence of quantitative details (like '{num_str}') indicates empirical, evidence-driven reporting rather than hearsay.",
+                f"It details verifiable stats or figures (e.g., '{num_str}'), mirroring standard factual reporting.",
+                f"The inclusion of specific metrics like '{num_str}' suggests the article is reporting concrete, measurable events."
+            ]
+            narrative_points.append(num_phrases[idx % len(num_phrases)])
+            
+        # Point D: Quotes
+        if quotes:
+            quote_str = quotes[0][:60].strip()
+            quote_phrases = [
+                f"It attributes information through direct quotes (e.g., '\"{quote_str}...\"'), a common sign of journalistic integrity.",
+                f"Including quoted statements like '\"{quote_str}...\"' reflects a practice of citing named sources directly.",
+                f"Accountable journalism is supported here by the inclusion of direct speech attribution: '\"{quote_str}...\"'."
+            ]
+            narrative_points.append(quote_phrases[idx % len(quote_phrases)])
+            
+        # Point E: Tone check
+        sensational_words = ['shocking', 'miracle', 'secret', 'exposed', 'coverup',
+                              'hoax', 'conspiracy', 'alien', 'cure-all', 'banned']
+        found_sensational = [w for w in sensational_words if w in text_lower]
+        if not found_sensational:
+            tone_phrases = [
+                "Furthermore, it avoids sensational, clickbait-style framing in favor of a neutral, professional tone.",
+                "Crucially, the tone remains objective and matter-of-fact, lacking the emotional hyperbole typical of clickbait.",
+                "Additionally, the absence of emotionally manipulative language suggests the goal is to inform, not to shock."
+            ]
+            narrative_points.append(tone_phrases[idx % len(tone_phrases)])
+            
+        full_narrative = f"{opening} " + " ".join(narrative_points)
         
-        if has_institution:
-            explanation += "🏛️ **Institutional References**: Mentions of established institutions (universities, government agencies) suggest credibility and verifiable sources.\n\n"
+        explanation = f"### 📰 Analysis Summary\n\n{full_narrative}\n\n"
         
-        if has_numbers and has_specifics:
-            explanation += "📈 **Specific Data**: Contains specific numbers, statistics, and quantitative information that can be verified, which is typical of factual reporting.\n\n"
-        
-        if len(text.split()) > 100:
-            explanation += "📝 **Detailed Content**: The text provides substantial detail and context rather than making vague or sensational claims.\n\n"
-        
-        explanation += "✅ **Overall Assessment**: The combination of factual language, institutional references, and specific data points strongly indicates this is legitimate news content rather than misinformation."
-        
+        if top_real_words:
+            explanation += "#### 🔍 Key Factual Indicators Detected:\n"
+            for word in top_real_words[:5]:
+                explanation += f"- **{word.title()}** (strongly associated with verified reports)\n"
+                
         return explanation
-    
-    def _generate_fake_news_explanation(self, text, important_features):
+
+    def _generate_fake_news_explanation(self, text, top_fake_words, top_real_words):
+        import re
+        text_lower = text.lower()
         
-        sensational_indicators = []
-        for feature, fake_score, real_score in important_features:
-            if feature in ['shocking', 'secret', 'miracle', 'breakthrough', 'reveals', 'overnight', 'instant', 'magical', 'cure', 'conspiracy', 'alien', 'time', 'prophecy']:
-                sensational_indicators.append(feature)
+        # 1. Select a dynamic opening sentence based on a hash of the text to ensure variety across examples
+        openings = [
+            "This text contains linguistic markers strongly associated with sensationalized or fabricated online content.",
+            "The style and vocabulary used here closely align with patterns common in misinformation or clickbait.",
+            "Analysis reveals several rhetorical techniques typically used to spread unverified claims.",
+            "The writing pattern suggests a sensationalist framing rather than standard objective reporting."
+        ]
+        idx = sum(ord(c) for c in text[:30]) % len(openings)
+        opening = openings[idx]
         
-        has_exaggerated_claims = any(word in text.lower() for word in ['miracle', 'overnight', 'instant', 'magical', 'secret', 'shocking'])
-        has_conspiracy = any(word in text.lower() for word in ['conspiracy', 'cover', 'hide', 'secret', 'truth'])
-        has_unverifiable = any(word in text.lower() for word in ['believe', 'claim', 'allegedly', 'reportedly'])
-        has_emotional = any(word in text.lower() for word in ['shocking', 'amazing', 'incredible', 'unbelievable', 'astonishing'])
+        # 2. Map specific sensational words to reasons
+        sensational_map = {
+            'shocking': 'designed to shock and alarm',
+            'miracle': 'promising an unrealistic perfect solution',
+            'secret': 'implying a hidden plot',
+            'exposed': 'using fear-based framing',
+            'cover-up': 'suggesting a conspiracy without proof',
+            'hoax': 'making unsubstantiated claims',
+            'cure': 'making medical claims without scientific backing',
+            'alien': 'invoking extraordinary, unverifiable claims',
+            'banned': 'implying suppression without context',
+            'revealed': 'framing information as a dramatic discovery',
+            'truth': 'implying mainstream sources are hiding facts',
+        }
+        triggered = [(word, reason) for word, reason in sensational_map.items() if word in text_lower]
         
-        explanation = "This text was classified as **Fake News** because:\n\n"
+        exaggerations = ['100%', 'guaranteed', 'overnight', 'instantly', 'always', 'never fails',
+                         'doctors hate', "they don't want", "before it's deleted", 'share this']
+        found_exaggerations = [e for e in exaggerations if e in text_lower]
         
-        if sensational_indicators:
-            explanation += f"⚠️ **Sensational Language**: The text uses exaggerated or sensational terms like '{', '.join(sensational_indicators[:3])}', which are commonly found in clickbait and misinformation.\n\n"
+        source_words = ['study', 'research', 'according to', 'published', 'journal',
+                        'scientist', 'university', 'professor', 'data shows', 'report']
+        has_sources = any(w in text_lower for w in source_words)
         
-        if has_exaggerated_claims:
-            explanation += "🚨 **Unrealistic Claims**: Contains promises of miraculous cures, instant results, or extraordinary claims that lack scientific evidence.\n\n"
+        urgency_words = ['share this', 'spread the word', "before it's deleted",
+                         'forward this', 'must see', 'go viral']
+        found_urgency = [w for w in urgency_words if w in text_lower]
         
-        if has_conspiracy:
-            explanation += "🕵️ **Conspiracy Elements**: References to secret plots, cover-ups, or hidden truths are typical of conspiracy theories rather than factual reporting.\n\n"
+        narrative_points = []
         
-        if has_unverifiable:
-            explanation += "❓ **Unverifiable Information**: Uses phrases that indicate claims cannot be independently verified or sourced.\n\n"
+        # Point A: Key model words
+        if top_fake_words:
+            word_str = ', '.join(f'"{w}"' for w in top_fake_words[:4])
+            narrative_points.append(
+                f"The model flagged vocabulary like {word_str}, which statistically dominates fabricated articles."
+            )
+            
+        # Point B: Sensational triggers
+        if triggered:
+            details = ', '.join(f'"{w}" ({r})' for w, r in triggered[:2])
+            sens_phrases = [
+                f"It utilizes emotionally charged phrases such as {details} to provoke a direct reaction.",
+                f"We detected clickbait framing including {details}, which targets reader anxiety or curiosity.",
+                f"The phrasing includes buzzwords like {details} to sensationalize the topic."
+            ]
+            narrative_points.append(sens_phrases[idx % len(sens_phrases)])
+            
+        # Point C: Exaggeration
+        if found_exaggerations:
+            exag_str = ', '.join(f'"{e}"' for e in found_exaggerations[:2])
+            exag_phrases = [
+                f"It makes absolute or exaggerated statements such as {exag_str} that lack nuance or objective backing.",
+                f"The text uses extreme claims like {exag_str}, which are uncharacteristic of objective, fact-based journalism.",
+                f"By employing absolute claims like {exag_str}, the writing promises certainty where evidence is absent."
+            ]
+            narrative_points.append(exag_phrases[idx % len(exag_phrases)])
+            
+        # Point D: No sources
+        if not has_sources:
+            source_phrases = [
+                "Crucially, the article fails to cite any verifiable research, studies, or named authority to support its claims.",
+                "There is a complete absence of named institutional sources or scientific references to ground the narrative.",
+                "The piece provides zero citations to peer-reviewed journals, verified databases, or official records."
+            ]
+            narrative_points.append(source_phrases[idx % len(source_phrases)])
+            
+        # Point E: Urgency manipulation
+        if found_urgency:
+            urg_str = ', '.join(f'"{u}"' for u in found_urgency[:2])
+            urg_phrases = [
+                f"It also employs urgency cues (e.g., {urg_str}) to encourage rapid, uncritical sharing.",
+                f"The inclusion of sharing prompts like {urg_str} is a key viral technique used to bypass critical analysis.",
+                f"Phrases like {urg_str} are explicitly designed to create a false sense of urgency so the claim spreads before verification."
+            ]
+            narrative_points.append(urg_phrases[idx % len(urg_phrases)])
+            
+        # Combine
+        full_narrative = f"{opening} " + " ".join(narrative_points)
         
-        if has_emotional:
-            explanation += "😮 **Emotional Manipulation**: Employs emotional language designed to provoke strong reactions rather than inform objectively.\n\n"
+        explanation = f"### ⚠️ Analysis Summary\n\n{full_narrative}\n\n"
         
-        has_no_sources = not any(word in text.lower() for word in ['study', 'research', 'scientist', 'university', 'published', 'journal'])
-        if has_no_sources:
-            explanation += "📰 **Missing Sources**: Lacks references to credible studies, research institutions, or verifiable sources.\n\n"
-        
-        explanation += "❌ **Overall Assessment**: The presence of sensational language, unrealistic claims, and lack of credible sources strongly indicates this content is misinformation rather than legitimate news."
-        
+        if top_fake_words:
+            explanation += "#### 🔍 Key Risk Factors Detected:\n"
+            for word in top_fake_words[:5]:
+                explanation += f"- **{word.title()}** (statistically correlated with misinformation)\n"
+                
+        if top_real_words:
+            explanation += f"\n*Note: Although the text contains minor factual keywords like {', '.join(f'**{w}**' for w in top_real_words[:3])}, the overwhelming linguistic signal remains unreliable.*"
+            
         return explanation
-    
+
     def save_model(self, model_path, vectorizer_path):
         if self.best_model is None:
             raise ValueError("No model to save!")
@@ -278,5 +408,4 @@ def train_and_evaluate_models():
 
 if __name__ == "__main__":
     print("⚠️  This script is deprecated for 24-sample training.")
-    print("📊 Please use 'python train_large_dataset.py' for the large dataset model.")
     print("🚀 The large dataset model achieves 100% accuracy on 44,898 articles.")
