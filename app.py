@@ -71,21 +71,23 @@ def get_db_path():
 
 def init_db():
     try:
-        conn = sqlite3.connect(get_db_path())
+        db_path = get_db_path()
+        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                input_text TEXT,
-                prediction TEXT,
-                confidence REAL,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                input_text TEXT NOT NULL,
+                prediction TEXT NOT NULL,
+                confidence REAL NOT NULL,
+                timestamp TEXT NOT NULL
             )
         ''')
         conn.commit()
         conn.close()
+        print(f"✓ Database initialized at: {db_path}")
     except Exception as e:
-        print(f"Failed to initialize database: {e}")
+        print(f"✗ Database init error: {e}")
 
 def initialize_model():
     global detector, preprocessor
@@ -167,18 +169,13 @@ def predict():
             return jsonify({'error': 'No text provided'}), 400
         if len(text) < 10:
             return jsonify({'error': 'Text too short for accurate analysis'}), 400
+
         if detector and preprocessor:
             result = detector.predict(text)
         else:
             result = fallback_predict(text)
 
         ist_timestamp = get_ist_time()
-        new_item = {
-            'text': text,
-            'prediction': result['prediction'],
-            'confidence': float(result['confidence']),
-            'timestamp': ist_timestamp
-        }
 
         try:
             conn = sqlite3.connect(get_db_path())
@@ -188,14 +185,14 @@ def predict():
                 (text, result['prediction'], float(result['confidence']), ist_timestamp)
             )
             conn.commit()
+            print(f"✓ Saved to DB: {text[:50]}... at {ist_timestamp}")
             conn.close()
         except Exception as db_err:
-            print(f"Database error: {db_err}")
+            print(f"✗ Database error: {db_err}")
 
-        sync_to_kvdb(new_item)
         return jsonify(result)
     except Exception as e:
-        print(f"Prediction error: {str(e)}")
+        print(f"✗ Prediction error: {str(e)}")
         return jsonify({'error': 'Failed to analyze text'}), 500
 
 @app.route('/history', methods=['GET'])
@@ -204,19 +201,25 @@ def history():
         db_items = []
         try:
             conn = sqlite3.connect(get_db_path())
+            conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT input_text, prediction, confidence, timestamp FROM history ORDER BY rowid DESC LIMIT 100")
+            cursor.execute("SELECT input_text, prediction, confidence, timestamp FROM history ORDER BY rowid DESC")
             rows = cursor.fetchall()
             conn.close()
+
             for r in rows:
                 db_items.append({
                     'text': r[0],
                     'prediction': r[1],
-                    'confidence': r[2],
+                    'confidence': float(r[2]),
                     'timestamp': r[3]
                 })
         except Exception as db_read_err:
             print(f"Database read error: {db_read_err}")
+            return jsonify([])
+
+        if not db_items:
+            return jsonify([])
 
         seen_texts = set()
         unique_items = []
@@ -227,12 +230,12 @@ def history():
                 unique_items.append(item)
 
         unique_items.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
-        final_list = unique_items[:50]
+        final_list = unique_items[:2]
 
         return jsonify(final_list)
     except Exception as e:
         print(f"History error: {e}")
-        return jsonify({'error': 'Failed to retrieve history'}), 500
+        return jsonify([])
 
 @app.route('/sync-history', methods=['GET'])
 def sync_history():

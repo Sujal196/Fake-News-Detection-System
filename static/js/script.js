@@ -345,7 +345,7 @@ async function loadHistory() {
 
     function renderList(list) {
         if (!list || list.length === 0) {
-            historyContent.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--text-muted); width: 100%;">No predictions stored yet. Analyze an article above to begin.</div>`;
+            historyContent.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--text-muted); display: flex; justify-content: center; align-items: center; min-height: 100px; width: 100%; word-wrap: break-word;">No predictions stored yet. Analyze an article above to begin.</div>`;
             return;
         }
 
@@ -397,9 +397,10 @@ async function loadHistory() {
         })).filter(item => item.text.trim() !== '');
 
         cleanedData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        renderList(cleanedData.slice(0, 50));
+
+        renderList(cleanedData.slice(0, 2));
     } catch (err) {
-        console.error(err);
+        console.error('History error:', err);
         renderList([]);
     }
 }
