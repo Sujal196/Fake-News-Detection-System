@@ -106,21 +106,24 @@ form.addEventListener('submit', async (e) => {
         if (!response.ok) throw new Error('Analysis failed');
 
         const data = await response.json();
-        
+
         try {
             const localHistory = JSON.parse(localStorage.getItem('truthscan_history') || '[]');
-            localHistory.unshift({
+            const newItem = {
                 text: text,
                 prediction: data.prediction,
                 confidence: data.confidence,
                 timestamp: new Date().toISOString()
-            });
+            };
+            localHistory.unshift(newItem);
             localStorage.setItem('truthscan_history', JSON.stringify(localHistory.slice(0, 50)));
+            localStorage.setItem('last_sync_time', Date.now().toString());
         } catch (localErr) {
             console.error(localErr);
         }
 
         renderResult(data);
+        await new Promise(resolve => setTimeout(resolve, 500));
         loadHistory();
 
     } catch (err) {
@@ -320,12 +323,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (document.visibilityState === 'visible') {
             loadHistory();
         }
-    }, 8000);
+    }, 6000);
 
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
             loadHistory();
         }
+    });
+
+    window.addEventListener('storage', (event) => {
+        if (event.key === 'truthscan_history' || event.key === 'last_sync_time') {
+            loadHistory();
+        }
+    });
+
+    window.addEventListener('focus', () => {
+        loadHistory();
     });
 });
 
@@ -419,6 +432,7 @@ async function loadHistory() {
         if (!dbData || dbData.length === 0) {
             renderList([]);
             localStorage.setItem('truthscan_history', JSON.stringify([]));
+            localStorage.setItem('last_sync_time', Date.now().toString());
             return;
         }
 
@@ -432,12 +446,24 @@ async function loadHistory() {
         cleanedData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
         const truncatedList = cleanedData.slice(0, 50);
+
         localStorage.setItem('truthscan_history', JSON.stringify(truncatedList));
+        localStorage.setItem('last_sync_time', Date.now().toString());
 
         renderList(truncatedList);
     } catch (err) {
         console.error(err);
-        renderList([]);
+
+        try {
+            let localData = JSON.parse(localStorage.getItem('truthscan_history') || '[]');
+            if (localData.length > 0) {
+                renderList(localData);
+            } else {
+                renderList([]);
+            }
+        } catch (e) {
+            renderList([]);
+        }
     }
 }
 

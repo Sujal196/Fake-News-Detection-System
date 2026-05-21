@@ -171,26 +171,27 @@ def predict():
             result = detector.predict(text)
         else:
             result = fallback_predict(text)
-        
+
+        ist_timestamp = get_ist_time()
         new_item = {
             'text': text,
             'prediction': result['prediction'],
             'confidence': float(result['confidence']),
-            'timestamp': get_ist_time()
+            'timestamp': ist_timestamp
         }
-        
+
         try:
             conn = sqlite3.connect(get_db_path())
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT INTO history (input_text, prediction, confidence, timestamp) VALUES (?, ?, ?, ?)",
-                (text, result['prediction'], float(result['confidence']), new_item['timestamp'])
+                (text, result['prediction'], float(result['confidence']), ist_timestamp)
             )
             conn.commit()
             conn.close()
         except Exception as db_err:
             print(f"Database error: {db_err}")
-            
+
         sync_to_kvdb(new_item)
         return jsonify(result)
     except Exception as e:
@@ -204,52 +205,31 @@ def history():
         try:
             conn = sqlite3.connect(get_db_path())
             cursor = conn.cursor()
-            cursor.execute("SELECT id, input_text, prediction, confidence, timestamp FROM history ORDER BY id DESC LIMIT 50")
+            cursor.execute("SELECT input_text, prediction, confidence, timestamp FROM history ORDER BY rowid DESC LIMIT 100")
             rows = cursor.fetchall()
             conn.close()
             for r in rows:
                 db_items.append({
-                    'text': r[1],
-                    'prediction': r[2],
-                    'confidence': r[3],
-                    'timestamp': r[4]
+                    'text': r[0],
+                    'prediction': r[1],
+                    'confidence': r[2],
+                    'timestamp': r[3]
                 })
         except Exception as db_read_err:
             print(f"Database read error: {db_read_err}")
 
-        kvdb_data = get_kvdb_history()
-        if kvdb_data is not None:
-            merged_map = {}
-            for item in kvdb_data:
-                txt = item.get('text', '').strip()
-                if txt:
-                    merged_map[txt] = item
-            for item in db_items:
-                txt = item.get('text', '').strip()
-                if txt and txt not in merged_map:
-                    merged_map[txt] = item
-            merged_list = list(merged_map.values())
-            merged_list.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
-            merged_list = merged_list[:50]
-            try:
-                data_bytes = json.dumps(merged_list).encode('utf-8')
-                post_req = urllib.request.Request(
-                    KVDB_URL,
-                    data=data_bytes,
-                    headers={
-                        'Content-Type': 'application/json',
-                        'User-Agent': 'Mozilla/5.0'
-                    },
-                    method='POST'
-                )
-                with urllib.request.urlopen(post_req, timeout=3) as response:
-                    pass
-            except Exception as sync_err:
-                print(f"Failed to sync merged data back to kvdb: {sync_err}")
-            return jsonify(merged_list)
-        else:
-            db_items.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
-            return jsonify(db_items)
+        seen_texts = set()
+        unique_items = []
+        for item in db_items:
+            text_key = item.get('text', '').strip().lower()
+            if text_key and text_key not in seen_texts:
+                seen_texts.add(text_key)
+                unique_items.append(item)
+
+        unique_items.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+        final_list = unique_items[:50]
+
+        return jsonify(final_list)
     except Exception as e:
         print(f"History error: {e}")
         return jsonify({'error': 'Failed to retrieve history'}), 500
