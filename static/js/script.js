@@ -27,7 +27,7 @@ function formatIST(date) {
     }
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
-    const ampm = date.getHours() >= 12 ? 'pm' : 'am';
+    const ampm = date.getHours() >= 12 ? 'PM' : 'AM';
     const displayHour = date.getHours() % 12 || 12;
     return `${String(displayHour).padStart(2, '0')}:${minutes} ${ampm}`;
 }
@@ -106,21 +106,6 @@ form.addEventListener('submit', async (e) => {
         if (!response.ok) throw new Error('Analysis failed');
 
         const data = await response.json();
-
-        try {
-            const localHistory = JSON.parse(localStorage.getItem('truthscan_history') || '[]');
-            const newItem = {
-                text: text,
-                prediction: data.prediction,
-                confidence: data.confidence,
-                timestamp: new Date().toISOString()
-            };
-            localHistory.unshift(newItem);
-            localStorage.setItem('truthscan_history', JSON.stringify(localHistory.slice(0, 50)));
-            localStorage.setItem('last_sync_time', Date.now().toString());
-        } catch (localErr) {
-            console.error(localErr);
-        }
 
         renderResult(data);
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -318,28 +303,6 @@ document.addEventListener('DOMContentLoaded', () => {
             refreshBtn.style.pointerEvents = 'auto';
         });
     }
-
-    setInterval(() => {
-        if (document.visibilityState === 'visible') {
-            loadHistory();
-        }
-    }, 6000);
-
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            loadHistory();
-        }
-    });
-
-    window.addEventListener('storage', (event) => {
-        if (event.key === 'truthscan_history' || event.key === 'last_sync_time') {
-            loadHistory();
-        }
-    });
-
-    window.addEventListener('focus', () => {
-        loadHistory();
-    });
 });
 
 function showToast(msg, type = 'success') {
@@ -364,7 +327,6 @@ async function loadHistory() {
 
     function parseTimestamp(ts) {
         if (!ts) return new Date();
-
         let clean = ts.trim();
 
         if (!clean.includes('T')) {
@@ -374,9 +336,7 @@ async function loadHistory() {
         }
 
         let d = new Date(clean);
-        if (isNaN(d.getTime())) {
-            d = new Date();
-        }
+        if (isNaN(d.getTime())) return new Date();
 
         const utcTime = d.getTime();
         const istTime = new Date(utcTime + (5.5 * 60 * 60 * 1000));
@@ -385,11 +345,7 @@ async function loadHistory() {
 
     function renderList(list) {
         if (!list || list.length === 0) {
-            historyContent.innerHTML = `
-                <div style="text-align: center; padding: 30px; color: var(--text-muted);">
-                    No predictions stored yet. Analyze an article above to begin.
-                </div>
-            `;
+            historyContent.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--text-muted); width: 100%;">No predictions stored yet. Analyze an article above to begin.</div>`;
             return;
         }
 
@@ -425,14 +381,11 @@ async function loadHistory() {
 
     try {
         const response = await fetch('/history');
-        if (!response.ok) throw new Error('Database fetch failed');
+        if (!response.ok) throw new Error('Failed');
 
         const dbData = await response.json();
-
         if (!dbData || dbData.length === 0) {
             renderList([]);
-            localStorage.setItem('truthscan_history', JSON.stringify([]));
-            localStorage.setItem('last_sync_time', Date.now().toString());
             return;
         }
 
@@ -444,26 +397,10 @@ async function loadHistory() {
         })).filter(item => item.text.trim() !== '');
 
         cleanedData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-        const truncatedList = cleanedData.slice(0, 50);
-
-        localStorage.setItem('truthscan_history', JSON.stringify(truncatedList));
-        localStorage.setItem('last_sync_time', Date.now().toString());
-
-        renderList(truncatedList);
+        renderList(cleanedData.slice(0, 50));
     } catch (err) {
         console.error(err);
-
-        try {
-            let localData = JSON.parse(localStorage.getItem('truthscan_history') || '[]');
-            if (localData.length > 0) {
-                renderList(localData);
-            } else {
-                renderList([]);
-            }
-        } catch (e) {
-            renderList([]);
-        }
+        renderList([]);
     }
 }
 
