@@ -15,7 +15,6 @@ def initialize_model():
     global detector, preprocessor
     
     try:
-        # Use absolute paths for Vercel compatibility
         base_dir = os.path.dirname(os.path.abspath(__file__))
         model_path = os.path.join(base_dir, 'models', 'final_model.pkl')
         vectorizer_path = os.path.join(base_dir, 'models', 'final_vectorizer.pkl')
@@ -147,7 +146,6 @@ def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
 
-# Initialize model for serverless deployment
 initialize_model()
 
 if __name__ == '__main__':

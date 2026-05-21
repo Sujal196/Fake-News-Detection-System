@@ -66,9 +66,6 @@ class FakeNewsDetector:
         prediction = self.best_model.predict(text_vector)[0]
         probability = self.best_model.predict_proba(text_vector)[0]
         
-        # --- Heuristic Adjustment for Generic Texts ---
-        # The ISOT dataset is heavily biased towards political news.
-        # To make it work well for generic texts (like science, health), we apply a heuristic.
         text_lower = text.lower()
         fake_indicators = ['shocking', 'secret', 'miracle', 'reveals', 'doctors hate', 'conspiracy', 'alien', 'cure all']
         real_indicators = ['study', 'research', 'scientists', 'published', 'peer-reviewed', 'university', 'journal', 'clinical', 'analysis']
@@ -79,24 +76,20 @@ class FakeNewsDetector:
         fake_prob = probability[0]
         real_prob = probability[1]
         
-        # Boost real probability if real indicators are present
         if real_score > fake_score:
             real_prob = min(0.95, real_prob + (real_score * 0.15))
             fake_prob = 1.0 - real_prob
             if real_prob > 0.5:
                 prediction = 1
-        # Boost fake probability if fake indicators are present
         elif fake_score > real_score:
             fake_prob = min(0.95, fake_prob + (fake_score * 0.15))
             real_prob = 1.0 - fake_prob
             if fake_prob > 0.5:
                 prediction = 0
         
-        # Normalize just in case
         total = fake_prob + real_prob
         fake_prob /= total
         real_prob /= total
-        # ---------------------------------------------
         
         explanation = self.generate_explanation(text, processed_text, text_vector, prediction)
         
@@ -111,35 +104,26 @@ class FakeNewsDetector:
         }
     
     def generate_explanation(self, original_text, processed_text, text_vector, prediction):
-        
         feature_names = self.vectorizer.get_feature_names_out()
-        
-        # Initialize probabilities for different model types
         fake_probs = None
         real_probs = None
         
         if hasattr(self.best_model, 'feature_log_prob_'):
-            # Naive Bayes
             fake_probs = self.best_model.feature_log_prob_[0]
             real_probs = self.best_model.feature_log_prob_[1]
         elif hasattr(self.best_model, 'coef_'):
-            # Logistic Regression
             coef = self.best_model.coef_[0]
             fake_probs = -coef
             real_probs = coef
         elif hasattr(self.best_model, 'feature_importances_'):
-            # Tree-based models (Random Forest, Gradient Boosting)
-            # For tree models, we can't get direct feature probabilities
-            # Use feature importance as a proxy
             importance = self.best_model.feature_importances_
-            fake_probs = -importance  # Negative for fake news indicators
-            real_probs = importance   # Positive for real news indicators
+            fake_probs = -importance
+            real_probs = importance
         else:
-            # Default fallback
             fake_probs = real_probs = [0] * len(feature_names)
         
         feature_indices = text_vector.indices
-        tfidf_values = text_vector.data  # actual TF-IDF weight of each word in this input
+        tfidf_values = text_vector.data
         
         present_features = []
         for i, idx in enumerate(feature_indices):
@@ -148,7 +132,6 @@ class FakeNewsDetector:
                 tfidf_weight = tfidf_values[i]
                 fake_score = fake_probs[idx]
                 real_score = real_probs[idx]
-                # Combined influence = model weight * how prominently the word appears
                 fake_influence = fake_score * tfidf_weight
                 real_influence = real_score * tfidf_weight
                 present_features.append((feature_name, fake_influence, real_influence))
@@ -170,7 +153,6 @@ class FakeNewsDetector:
         import re
         text_lower = text.lower()
         
-        # 1. Select a dynamic opening sentence based on a hash of the text to ensure variety across examples
         openings = [
             "This text exhibits the linguistic structure and neutral delivery typical of professional, objective reporting.",
             "The model classified this as legitimate news due to its factual framing and objective presentation of events.",
@@ -180,7 +162,6 @@ class FakeNewsDetector:
         idx = sum(ord(c) for c in text[:30]) % len(openings)
         opening = openings[idx]
         
-        # 2. Extract specific features
         institutions = [w for w in ['federal reserve', 'congress', 'senate', 'president',
                                     'minister', 'parliament', 'court', 'department',
                                     'university', 'institute', 'agency', 'organization',
@@ -191,14 +172,12 @@ class FakeNewsDetector:
         
         narrative_points = []
         
-        # Point A: Key model-weighted words
         if top_real_words:
             word_str = ', '.join(f'"{w}"' for w in top_real_words[:4])
             narrative_points.append(
                 f"Specifically, the model identified key terms like {word_str}, which are statistically prevalent in genuine journalistic databases."
             )
             
-        # Point B: Official institutions
         if institutions:
             inst_str = ', '.join(i.title() for i in institutions[:3])
             inst_phrases = [
@@ -208,7 +187,6 @@ class FakeNewsDetector:
             ]
             narrative_points.append(inst_phrases[idx % len(inst_phrases)])
             
-        # Point C: Data & Statistics
         if numbers:
             num_str = numbers[0].strip()
             num_phrases = [
@@ -218,7 +196,6 @@ class FakeNewsDetector:
             ]
             narrative_points.append(num_phrases[idx % len(num_phrases)])
             
-        # Point D: Quotes
         if quotes:
             quote_str = quotes[0][:60].strip()
             quote_phrases = [
@@ -228,7 +205,6 @@ class FakeNewsDetector:
             ]
             narrative_points.append(quote_phrases[idx % len(quote_phrases)])
             
-        # Point E: Tone check
         sensational_words = ['shocking', 'miracle', 'secret', 'exposed', 'coverup',
                               'hoax', 'conspiracy', 'alien', 'cure-all', 'banned']
         found_sensational = [w for w in sensational_words if w in text_lower]
@@ -255,7 +231,6 @@ class FakeNewsDetector:
         import re
         text_lower = text.lower()
         
-        # 1. Select a dynamic opening sentence based on a hash of the text to ensure variety across examples
         openings = [
             "This text contains linguistic markers strongly associated with sensationalized or fabricated online content.",
             "The style and vocabulary used here closely align with patterns common in misinformation or clickbait.",
@@ -265,7 +240,6 @@ class FakeNewsDetector:
         idx = sum(ord(c) for c in text[:30]) % len(openings)
         opening = openings[idx]
         
-        # 2. Map specific sensational words to reasons
         sensational_map = {
             'shocking': 'designed to shock and alarm',
             'miracle': 'promising an unrealistic perfect solution',
@@ -282,7 +256,7 @@ class FakeNewsDetector:
         triggered = [(word, reason) for word, reason in sensational_map.items() if word in text_lower]
         
         exaggerations = ['100%', 'guaranteed', 'overnight', 'instantly', 'always', 'never fails',
-                         'doctors hate', "they don't want", "before it's deleted", 'share this']
+                          'doctors hate', "they don't want", "before it's deleted", 'share this']
         found_exaggerations = [e for e in exaggerations if e in text_lower]
         
         source_words = ['study', 'research', 'according to', 'published', 'journal',
@@ -295,14 +269,12 @@ class FakeNewsDetector:
         
         narrative_points = []
         
-        # Point A: Key model words
         if top_fake_words:
             word_str = ', '.join(f'"{w}"' for w in top_fake_words[:4])
             narrative_points.append(
                 f"The model flagged vocabulary like {word_str}, which statistically dominates fabricated articles."
             )
             
-        # Point B: Sensational triggers
         if triggered:
             details = ', '.join(f'"{w}" ({r})' for w, r in triggered[:2])
             sens_phrases = [
@@ -312,7 +284,6 @@ class FakeNewsDetector:
             ]
             narrative_points.append(sens_phrases[idx % len(sens_phrases)])
             
-        # Point C: Exaggeration
         if found_exaggerations:
             exag_str = ', '.join(f'"{e}"' for e in found_exaggerations[:2])
             exag_phrases = [
@@ -322,7 +293,6 @@ class FakeNewsDetector:
             ]
             narrative_points.append(exag_phrases[idx % len(exag_phrases)])
             
-        # Point D: No sources
         if not has_sources:
             source_phrases = [
                 "Crucially, the article fails to cite any verifiable research, studies, or named authority to support its claims.",
@@ -331,7 +301,6 @@ class FakeNewsDetector:
             ]
             narrative_points.append(source_phrases[idx % len(source_phrases)])
             
-        # Point E: Urgency manipulation
         if found_urgency:
             urg_str = ', '.join(f'"{u}"' for u in found_urgency[:2])
             urg_phrases = [
@@ -341,7 +310,6 @@ class FakeNewsDetector:
             ]
             narrative_points.append(urg_phrases[idx % len(urg_phrases)])
             
-        # Combine
         full_narrative = f"{opening} " + " ".join(narrative_points)
         
         explanation = f"⚠️ **Analysis Summary**\n\n{full_narrative}\n\n"
@@ -400,7 +368,6 @@ class FakeNewsDetector:
         print(classification_report(y_true, y_pred, target_names=['Fake News', 'Real News']))
 
 def train_and_evaluate_models():
-    """This function is deprecated. Use train_large_dataset.py instead."""
     print("⚠️  This function is deprecated for 24-sample training.")
     print("📊 Please use 'python train_large_dataset.py' for the large dataset model.")
     print("🚀 The large dataset model achieves 100% accuracy on 44,898 articles.")

@@ -1,4 +1,3 @@
-// DOM Elements
 const form = document.getElementById('predictionForm');
 const textArea = document.getElementById('newsText');
 const charCount = document.getElementById('charCount');
@@ -19,7 +18,6 @@ const realPct = document.getElementById('realPct');
 const explainContent = document.getElementById('explainContent');
 const navbar = document.getElementById('navbar');
 
-// Theme Toggle
 const root = document.documentElement;
 const savedTheme = localStorage.getItem('theme');
 
@@ -41,7 +39,6 @@ document.querySelectorAll('.theme-btn').forEach(btn => {
     });
 });
 
-// Navbar Scroll
 window.addEventListener('scroll', () => {
     if (window.scrollY > 50) {
         navbar.classList.add('scrolled');
@@ -50,7 +47,6 @@ window.addEventListener('scroll', () => {
     }
 });
 
-// Character Counter & Validation
 textArea.addEventListener('input', function () {
     const len = this.value.length;
     charCount.textContent = len;
@@ -62,12 +58,10 @@ textArea.addEventListener('input', function () {
         charDot.classList.add('warn');
     }
 
-    // Auto-resize
     this.style.height = 'auto';
     this.style.height = (this.scrollHeight) + 'px';
 });
 
-// Example Tags
 document.querySelectorAll('.ex-tag').forEach(tag => {
     tag.addEventListener('click', () => {
         const type = tag.dataset.example;
@@ -80,7 +74,6 @@ document.querySelectorAll('.ex-tag').forEach(tag => {
     });
 });
 
-// Form Submission
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const text = textArea.value.trim();
@@ -112,7 +105,6 @@ form.addEventListener('submit', async (e) => {
     }
 });
 
-// Loading State
 function setLoading(isLoading) {
     submitBtn.disabled = isLoading;
     if (isLoading) {
@@ -126,7 +118,6 @@ function setLoading(isLoading) {
     }
 }
 
-// Render Results
 function renderResult(data) {
     const { prediction, confidence, probabilities, explanation } = data;
     const isFake = prediction === 'Fake News';
@@ -134,15 +125,12 @@ function renderResult(data) {
     const fPct = (probabilities['Fake News'] * 100).toFixed(1);
     const rPct = (probabilities['Real News'] * 100).toFixed(1);
 
-    // Show section
     resultSection.style.display = 'block';
 
-    // Smooth scroll to result
     setTimeout(() => {
         resultSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 100);
 
-    // Reset classes
     rGlow.className = 'result-glow ' + (isFake ? 'fake-glow' : 'real-glow');
     verdictIcon.className = 'verdict-icon ' + (isFake ? 'fake-icon' : 'real-icon');
     verdictIcon.innerHTML = isFake ? '⚠️' : '✅';
@@ -150,20 +138,16 @@ function renderResult(data) {
     verdictLabel.textContent = isFake ? 'FAKE NEWS' : 'REAL NEWS';
     verdictLabel.className = 'verdict-label ' + (isFake ? 'fake-text' : 'real-text');
 
-    // Animate Ring
     ringPct.textContent = confPct + '%';
     ringProg.className = 'ring-prog ' + (isFake ? 'fake-stroke' : 'real-stroke');
 
-    // Circumference of r=52 is 2 * PI * 52 ≈ 326.7
     const circ = 326.7;
     const offset = circ - (confPct / 100) * circ;
 
-    // Need a tiny timeout to allow CSS transition to trigger from default
     setTimeout(() => {
         ringProg.style.strokeDashoffset = offset;
     }, 50);
 
-    // Prob Bars
     fakePct.textContent = fPct + '%';
     realPct.textContent = rPct + '%';
 
@@ -172,9 +156,7 @@ function renderResult(data) {
         realBar.style.width = rPct + '%';
     }, 50);
 
-    // Explanation Formatting
     function formatExplanation(text) {
-        // Step 1: Split into lines
         const lines = text.split('\n');
         let html = '';
         let inBulletList = false;
@@ -182,7 +164,6 @@ function renderResult(data) {
         lines.forEach(line => {
             const trimmed = line.trim();
             if (!trimmed) {
-                // Blank line — close any open bullet list, start a paragraph break
                 if (inBulletList) {
                     html += '</ul>';
                     inBulletList = false;
@@ -191,11 +172,9 @@ function renderResult(data) {
                 return;
             }
 
-            // Convert **text** to <strong>text</strong>
             const boldified = trimmed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
             if (trimmed.startsWith('•')) {
-                // Bullet point line
                 if (!inBulletList) {
                     html += '<ul style="margin:6px 0 6px 0;padding-left:1.2em;list-style:none;">';
                     inBulletList = true;
@@ -203,7 +182,6 @@ function renderResult(data) {
                 const content = boldified.replace(/^•\s*/, '');
                 html += `<li style="margin:4px 0;padding-left:0.2em;">• ${content}</li>`;
             } else {
-                // Regular line — close bullet list if open
                 if (inBulletList) {
                     html += '</ul>';
                     inBulletList = false;
@@ -219,7 +197,6 @@ function renderResult(data) {
     explainContent.innerHTML = formatExplanation(explanation);
 }
 
-// --- Analytics Dashboard Logic ---
 function showTagInsight(tag, insight) {
     document.querySelectorAll('.ad-tag').forEach(t => t.classList.remove('active'));
     event.target.classList.add('active');
@@ -235,7 +212,6 @@ function showTagInsight(tag, insight) {
     }, 200);
 }
 
-// Number Counter Animation for Analytics
 function animateAnalyticsNumbers() {
     const stats = document.querySelectorAll('.ad-val.counter');
     stats.forEach(stat => {
@@ -271,7 +247,6 @@ document.addEventListener('DOMContentLoaded', () => {
         animateAnalyticsNumbers();
     }
 
-    // Hamburger Menu Logic
     const hamburger = document.getElementById('hamburger');
     const navLinks = document.getElementById('navLinks');
     if (hamburger && navLinks) {
@@ -280,7 +255,6 @@ document.addEventListener('DOMContentLoaded', () => {
             hamburger.classList.toggle('active');
         });
 
-        // Close menu on link click
         navLinks.querySelectorAll('a').forEach(link => {
             link.addEventListener('click', () => {
                 navLinks.classList.remove('active');
@@ -290,7 +264,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Toast Notifications
 function showToast(msg, type = 'success') {
     const container = document.getElementById('toastContainer');
     const toast = document.createElement('div');

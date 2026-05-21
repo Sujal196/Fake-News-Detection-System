@@ -9,7 +9,6 @@ from nltk.stem import WordNetLemmatizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 
-# Set NLTK data path to a writable directory on Vercel
 nltk_data_path = os.path.join('/tmp', 'nltk_data')
 if not os.path.exists(nltk_data_path):
     try:
@@ -44,15 +43,12 @@ class TextPreprocessor:
         if not isinstance(text, str):
             return ""
             
-        # Strip datelines like "WASHINGTON (Reuters) - " or "LONDON - " before lowercasing
         text = re.sub(r'^[a-zA-Z\s]+(?:\([a-zA-Z\s]+\))?\s*[-—]\s*', '', text)
         
         text = text.lower()
         
-        # Remove publisher footprints
         text = re.sub(r'reuters', '', text)
         
-        # Remove twitter handles
         text = re.sub(r'@[a-zA-Z0-9_]+', '', text)
         
         text = re.sub(r'http\S+|www\S+|https\S+', '', text, flags=re.MULTILINE)
@@ -94,13 +90,9 @@ def load_and_preprocess_data(file_path=None):
     if file_path and pd.io.common.file_exists(file_path):
         df = pd.read_csv(file_path)
         
-        # Handle multi-feature dataset with title, text
         if 'title' in df.columns and 'text' in df.columns:
-            # Combine title and text for better feature extraction
             df['final_text'] = df['title'].fillna('') + ' ' + df['text'].fillna('')
-            
         elif 'text' in df.columns:
-            # If only text column exists
             df['final_text'] = df['text'].fillna('')
         else:
             raise ValueError("Dataset must contain at least 'text' column")
@@ -118,12 +110,11 @@ def load_and_preprocess_data(file_path=None):
 
 
 def extract_features_tfidf(texts, max_features=10000):
-    """Optimized TF-IDF for large datasets"""
     vectorizer = TfidfVectorizer(
         max_features=max_features,
         ngram_range=(1, 3),
-        min_df=5,  # Increased to ignore extremely rare typos/words
-        max_df=0.7,  # Adjusted to ignore very common artifacts
+        min_df=5,
+        max_df=0.7,
         sublinear_tf=True,
         stop_words='english',
         analyzer='word'

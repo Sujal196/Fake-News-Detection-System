@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""
-Advanced Fake News Detection Training on Large Dataset
-Trains on Fake.csv and True.csv with multi-feature processing
-Optimized for 90-95% accuracy
-"""
 
 import pandas as pd
 import numpy as np
@@ -23,7 +18,6 @@ import seaborn as sns
 
 from data_preprocessing import load_and_preprocess_data, prepare_data
 
-# Suppress warnings
 warnings.filterwarnings('ignore')
 
 class AdvancedFakeNewsTrainer:
@@ -34,32 +28,27 @@ class AdvancedFakeNewsTrainer:
         self.results = {}
         
     def load_and_combine_datasets(self, fake_file='Fake.csv', true_file='True.csv'):
-        """Load and combine Fake.csv and True.csv with proper labeling"""
         print("=" * 80)
         print("LOADING AND COMBINING LARGE DATASETS")
         print("=" * 80)
         
         start_time = time.time()
         
-        # Load fake news dataset
         print(f"Loading {fake_file}...")
         fake_df = pd.read_csv(fake_file)
-        fake_df['label'] = 0  # 0 = Fake News
+        fake_df['label'] = 0
         fake_df['source'] = 'Fake.csv'
         print(f"✅ Fake news loaded: {len(fake_df):,} articles")
         
-        # Load real news dataset
         print(f"Loading {true_file}...")
         true_df = pd.read_csv(true_file)
-        true_df['label'] = 1  # 1 = Real News
+        true_df['label'] = 1
         true_df['source'] = 'True.csv'
         print(f"✅ Real news loaded: {len(true_df):,} articles")
         
-        # Combine datasets
         print("\nCombining datasets...")
         combined_df = pd.concat([fake_df, true_df], ignore_index=True)
         
-        # Shuffle the dataset
         combined_df = combined_df.sample(frac=1, random_state=42).reset_index(drop=True)
         
         load_time = time.time() - start_time
@@ -71,7 +60,6 @@ class AdvancedFakeNewsTrainer:
         print(f"   Columns: {list(combined_df.columns)}")
         print(f"   Load time: {load_time:.2f} seconds")
         
-        # Show sample data
         print(f"\n📝 Sample Data:")
         for i in range(min(3, len(combined_df))):
             row = combined_df.iloc[i]
@@ -83,23 +71,19 @@ class AdvancedFakeNewsTrainer:
         return combined_df
     
     def preprocess_large_dataset(self, df):
-        """Preprocess the large dataset with multi-feature handling"""
         print("=" * 80)
         print("PREPROCESSING LARGE DATASET")
         print("=" * 80)
         
         start_time = time.time()
         
-        # Work with the actual data
         processed_df = df.copy()
         
-        # Combine features
         processed_df['combined_text'] = (
             processed_df['title'].fillna('') + ' ' + 
             processed_df['text'].fillna('')
         )
         
-        # Apply text preprocessing
         from data_preprocessing import TextPreprocessor
         preprocessor = TextPreprocessor()
         
@@ -116,25 +100,22 @@ class AdvancedFakeNewsTrainer:
         return processed_df
     
     def create_optimized_vectorizer(self, texts):
-        """Create optimized TF-IDF vectorizer for large dataset"""
         print("=" * 80)
         print("CREATING OPTIMIZED FEATURE VECTORIZER")
         print("=" * 80)
         
         start_time = time.time()
         
-        # Optimized parameters for large dataset
         self.vectorizer = TfidfVectorizer(
             max_features=10000,
-            ngram_range=(1, 3),  # Unigrams, bigrams, trigrams
-            min_df=5,  # Increased to ignore extremely rare typos/words
-            max_df=0.7,  # Adjusted to ignore very common artifacts
+            ngram_range=(1, 3),
+            min_df=5,
+            max_df=0.7,
             sublinear_tf=True,
             stop_words='english',
             analyzer='word'
         )
         
-        # Fit and transform
         X_tfidf = self.vectorizer.fit_transform(texts)
         
         vectorize_time = time.time() - start_time
@@ -147,12 +128,10 @@ class AdvancedFakeNewsTrainer:
         return X_tfidf
     
     def train_multiple_models(self, X_train, X_test, y_train, y_test):
-        """Train multiple models with hyperparameter optimization"""
         print("=" * 80)
         print("TRAINING MULTIPLE MODELS WITH HYPERPARAMETER OPTIMIZATION")
         print("=" * 80)
         
-        # Define models with hyperparameter grids
         models_config = {
             'Logistic Regression': {
                 'model': LogisticRegression(random_state=42, max_iter=1000),
@@ -178,11 +157,10 @@ class AdvancedFakeNewsTrainer:
             print(f"\n🔧 Training {model_name}...")
             start_time = time.time()
             
-            # Grid search with cross-validation
             grid_search = GridSearchCV(
                 config['model'],
                 config['params'],
-                cv=3,  # 3-fold cross-validation
+                cv=3,
                 scoring='f1',
                 n_jobs=-1,
                 verbose=1
@@ -190,16 +168,12 @@ class AdvancedFakeNewsTrainer:
             
             grid_search.fit(X_train, y_train)
             
-            # Get best model
             best_model = grid_search.best_estimator_
             
-            # Make predictions
             y_pred = best_model.predict(X_test)
             
-            # Calculate metrics
             accuracy = accuracy_score(y_test, y_pred)
             
-            # Detailed classification report
             from sklearn.metrics import precision_score, recall_score, f1_score
             precision = precision_score(y_test, y_pred, average='weighted')
             recall = recall_score(y_test, y_pred, average='weighted')
@@ -207,7 +181,6 @@ class AdvancedFakeNewsTrainer:
             
             train_time = time.time() - start_time
             
-            # Store results
             self.results[model_name] = {
                 'model': best_model,
                 'accuracy': accuracy,
@@ -226,7 +199,6 @@ class AdvancedFakeNewsTrainer:
             print(f"   📊 F1-score: {f1:.4f}")
             print(f"   🔧 Best params: {grid_search.best_params_}")
             
-            # Update best model
             if f1 > best_score:
                 best_score = f1
                 best_model_name = model_name
@@ -236,7 +208,6 @@ class AdvancedFakeNewsTrainer:
         return best_model_name
     
     def evaluate_best_model(self, X_test, y_test, model_name):
-        """Detailed evaluation of the best model"""
         print("=" * 80)
         print(f"DETAILED EVALUATION OF BEST MODEL: {model_name}")
         print("=" * 80)
@@ -244,11 +215,9 @@ class AdvancedFakeNewsTrainer:
         result = self.results[model_name]
         y_pred = result['predictions']
         
-        # Classification report
         print("\n📋 Classification Report:")
         print(classification_report(y_test, y_pred, target_names=['Fake News', 'Real News']))
         
-        # Confusion matrix
         cm = confusion_matrix(y_test, y_pred)
         plt.figure(figsize=(8, 6))
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
@@ -262,18 +231,15 @@ class AdvancedFakeNewsTrainer:
         plt.close()
         print("✅ Confusion matrix saved as 'confusion_matrix_best_model.png'")
         
-        # Feature importance (if available)
         if hasattr(result['model'], 'feature_importances_'):
             self.plot_feature_importance(result['model'], model_name)
         elif hasattr(result['model'], 'coef_'):
             self.plot_coefficients(result['model'], model_name)
     
     def plot_feature_importance(self, model, model_name):
-        """Plot feature importance for tree-based models"""
         feature_names = self.vectorizer.get_feature_names_out()
         importances = model.feature_importances_
         
-        # Get top 20 features
         indices = np.argsort(importances)[-20:]
         top_features = [feature_names[i] for i in indices]
         top_importances = [importances[i] for i in indices]
@@ -289,11 +255,9 @@ class AdvancedFakeNewsTrainer:
         print("✅ Feature importance plot saved as 'feature_importance.png'")
     
     def plot_coefficients(self, model, model_name):
-        """Plot coefficients for linear models"""
         feature_names = self.vectorizer.get_feature_names_out()
         coefficients = model.coef_[0]
         
-        # Get top 20 positive and negative coefficients
         pos_indices = np.argsort(coefficients)[-20:]
         neg_indices = np.argsort(coefficients)[:20]
         
@@ -305,14 +269,12 @@ class AdvancedFakeNewsTrainer:
         
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
         
-        # Positive coefficients (real news indicators)
         ax1.barh(range(len(pos_features)), pos_coeffs)
         ax1.set_yticks(range(len(pos_features)))
         ax1.set_yticklabels(pos_features)
         ax1.set_xlabel('Coefficient Value')
         ax1.set_title(f'Top Real News Indicators - {model_name}')
         
-        # Negative coefficients (fake news indicators)
         ax2.barh(range(len(neg_features)), neg_coeffs)
         ax2.set_yticks(range(len(neg_features)))
         ax2.set_yticklabels(neg_features)
@@ -325,28 +287,23 @@ class AdvancedFakeNewsTrainer:
         print("✅ Feature coefficients plot saved as 'feature_coefficients.png'")
     
     def save_models(self):
-        """Save the best model and vectorizer"""
         print("=" * 80)
         print("SAVING MODELS")
         print("=" * 80)
         
-        # Save best model
         with open('models/final_model.pkl', 'wb') as f:
             pickle.dump(self.best_model, f)
         print("✅ Best model saved as 'models/final_model.pkl'")
         
-        # Save vectorizer
         with open('models/final_vectorizer.pkl', 'wb') as f:
             pickle.dump(self.vectorizer, f)
         print("✅ Vectorizer saved as 'models/final_vectorizer.pkl'")
         
-        # Save results
         with open('models/training_results.pkl', 'wb') as f:
             pickle.dump(self.results, f)
         print("✅ Training results saved as 'models/training_results.pkl'")
     
     def generate_training_report(self):
-        """Generate a comprehensive training report"""
         print("=" * 80)
         print("TRAINING REPORT")
         print("=" * 80)
@@ -371,44 +328,35 @@ class AdvancedFakeNewsTrainer:
             report.append(f"  Training Time: {result['training_time']:.2f}s")
             report.append("")
         
-        # Find best model
         best_model = max(self.results.keys(), key=lambda x: self.results[x]['f1_score'])
         report.append(f"BEST MODEL: {best_model}")
         report.append(f"F1-SCORE: {self.results[best_model]['f1_score']:.4f}")
         
-        # Save report
         with open('training_report.txt', 'w') as f:
             f.write('\n'.join(report))
         
         print("✅ Training report saved as 'training_report.txt'")
         
-        # Print summary
         print("\n📊 SUMMARY:")
         for line in report[-10:]:
             print(line)
 
 def main():
-    """Main training pipeline"""
     print("🚀 ADVANCED FAKE NEWS DETECTION TRAINING")
     print("🎯 Target Accuracy: 90-95%")
     print("📊 Dataset: Fake.csv + True.csv (44,898 articles)")
     print("=" * 80)
     
-    # Initialize trainer
     trainer = AdvancedFakeNewsTrainer()
     
     try:
-        # Step 1: Load and combine datasets
         df = trainer.load_and_combine_datasets()
         
-        # Step 2: Preprocess data
         processed_df = trainer.preprocess_large_dataset(df)
         
-        # Step 3: Create features
         X = trainer.create_optimized_vectorizer(processed_df['processed_text'])
         y = processed_df['label']
         
-        # Step 4: Split data
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42, stratify=y
         )
@@ -418,16 +366,12 @@ def main():
         print(f"   Test set: {X_test.shape[0]:,} articles")
         print(f"   Feature dimensions: {X_train.shape[1]:,}")
         
-        # Step 5: Train models
         best_model_name = trainer.train_multiple_models(X_train, X_test, y_train, y_test)
         
-        # Step 6: Evaluate best model
         trainer.evaluate_best_model(X_test, y_test, best_model_name)
         
-        # Step 7: Save models
         trainer.save_models()
         
-        # Step 8: Generate report
         trainer.generate_training_report()
         
         print("\n🎉 TRAINING COMPLETED SUCCESSFULLY!")
