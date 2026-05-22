@@ -21,15 +21,20 @@ const navbar = document.getElementById('navbar');
 const root = document.documentElement;
 const savedTheme = localStorage.getItem('theme');
 
+let sessionId = sessionStorage.getItem('truthscan_session_id');
+if (!sessionId) {
+    sessionId = 'sess_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now();
+    sessionStorage.setItem('truthscan_session_id', sessionId);
+}
+
 function formatIST(date) {
     if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
         return '';
     }
-    const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
     const ampm = date.getHours() >= 12 ? 'PM' : 'AM';
     const displayHour = date.getHours() % 12 || 12;
-    return `${String(displayHour).padStart(2, '0')}:${minutes} ${ampm}`;
+    return `${String(displayHour).padStart(2, '0')}:${minutes} ${ampm} IST`;
 }
 
 if (savedTheme) {
@@ -100,7 +105,7 @@ form.addEventListener('submit', async (e) => {
         const response = await fetch('/predict', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text })
+            body: JSON.stringify({ text, session_id: sessionId })
         });
 
         if (!response.ok) throw new Error('Analysis failed');
@@ -329,10 +334,7 @@ async function loadHistory() {
         if (!ts) return new Date();
         let clean = ts.trim();
 
-        // DB stores IST as: 2026-05-21 14:35:22
-        // Don't add T and Z, parse as IST directly
         if (!clean.includes('T')) {
-            // Parse as IST local time (DB already stored in IST)
             const parts = clean.split(' ');
             const dateParts = parts[0].split('-');
             const timeParts = parts[1].split(':');
@@ -346,7 +348,6 @@ async function loadHistory() {
                 parseInt(timeParts[2])
             );
 
-            // Adjust for IST offset (subtract 5.5 hours to get UTC, then add back as local)
             const offset = new Date(d.getTime()).getTimezoneOffset() * 60000;
             const istOffset = 5.5 * 60 * 60000;
             const utcTime = d.getTime() + offset + istOffset;
@@ -361,7 +362,7 @@ async function loadHistory() {
 
     function renderList(list) {
         if (!list || list.length === 0) {
-            historyContent.innerHTML = `<div style="text-align: center; padding: 30px; color: var(--text-muted); display: flex; justify-content: center; align-items: center; min-height: 100px; width: 100%; word-wrap: break-word;">No predictions stored yet. Analyze an article above to begin.</div>`;
+            historyContent.innerHTML = `<div class="empty-history-msg"><div>No predictions stored yet.</div><div>Analyze an article above to begin.</div></div>`;
             return;
         }
 
@@ -396,7 +397,7 @@ async function loadHistory() {
     }
 
     try {
-        const response = await fetch('/history');
+        const response = await fetch(`/history?session_id=${sessionId}&t=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) throw new Error('Failed');
 
         const dbData = await response.json();
@@ -414,7 +415,7 @@ async function loadHistory() {
 
         cleanedData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-        renderList(cleanedData.slice(0, 2));
+        renderList(cleanedData);
     } catch (err) {
         console.error('History error:', err);
         renderList([]);

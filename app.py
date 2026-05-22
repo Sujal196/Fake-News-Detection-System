@@ -70,7 +70,6 @@ def get_db_path():
     return os.path.join(base_dir, 'predictions.db')
 
 def save_to_live_db(item):
-    """Save to KVDB for live deployment"""
     try:
         current_history = []
         req = urllib.request.Request(KVDB_URL, headers={'User-Agent': 'Mozilla/5.0'})
@@ -105,6 +104,8 @@ def save_to_live_db(item):
 def init_db():
     try:
         db_path = get_db_path()
+        if not db_path:
+            return
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         cursor.execute('''
@@ -113,9 +114,14 @@ def init_db():
                 input_text TEXT NOT NULL,
                 prediction TEXT NOT NULL,
                 confidence REAL NOT NULL,
-                timestamp TEXT NOT NULL
+                timestamp TEXT NOT NULL,
+                session_id TEXT
             )
         ''')
+        try:
+            cursor.execute("ALTER TABLE history ADD COLUMN session_id TEXT")
+        except sqlite3.OperationalError:
+            pass
         conn.commit()
         conn.close()
         print(f"✓ Database initialized at: {db_path}")
@@ -198,6 +204,7 @@ def predict():
     try:
         data = request.get_json()
         text = data.get('text', '').strip()
+        session_id = data.get('session_id', '').strip()
         if not text:
             return jsonify({'error': 'No text provided'}), 400
         if len(text) < 10:
@@ -214,7 +221,8 @@ def predict():
             'text': text,
             'prediction': result['prediction'],
             'confidence': float(result['confidence']),
-            'timestamp': ist_timestamp
+            'timestamp': ist_timestamp,
+            'session_id': session_id
         }
 
         is_vercel = os.environ.get('VERCEL') == '1'
@@ -228,8 +236,8 @@ def predict():
                 conn.isolation_level = None
                 cursor = conn.cursor()
                 cursor.execute(
-                    "INSERT INTO history (input_text, prediction, confidence, timestamp) VALUES (?, ?, ?, ?)",
-                    (text, result['prediction'], float(result['confidence']), ist_timestamp)
+                    "INSERT INTO history (input_text, prediction, confidence, timestamp, session_id) VALUES (?, ?, ?, ?, ?)",
+                    (text, result['prediction'], float(result['confidence']), ist_timestamp, session_id)
                 )
                 conn.commit()
                 cursor.close()
@@ -251,15 +259,20 @@ def predict():
 def history():
     try:
         is_vercel = os.environ.get('VERCEL') == '1'
+        session_id = request.args.get('session_id', '').strip()
 
         if is_vercel:
             kvdb_data = get_kvdb_history()
             if kvdb_data:
-                print(f"✓ Returned {len(kvdb_data[:50])} items from KVDB (LIVE)")
-                return jsonify(kvdb_data[:50])
+                if session_id:
+                    kvdb_data = [item for item in kvdb_data if item.get('session_id') == session_id]
+                resp = jsonify(kvdb_data[:50])
+                resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+                return resp
             else:
-                print("⚠ No data in KVDB")
-                return jsonify([])
+                resp = jsonify([])
+                resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+                return resp
         else:
             db_path = get_db_path()
             db_items = []
@@ -269,7 +282,10 @@ def history():
                 conn.isolation_level = None
                 cursor = conn.cursor()
 
-                cursor.execute("SELECT input_text, prediction, confidence, timestamp FROM history ORDER BY id DESC")
+                if session_id:
+                    cursor.execute("SELECT input_text, prediction, confidence, timestamp FROM history WHERE session_id = ? ORDER BY id DESC", (session_id,))
+                else:
+                    cursor.execute("SELECT input_text, prediction, confidence, timestamp FROM history ORDER BY id DESC")
                 rows = cursor.fetchall()
 
                 cursor.close()
@@ -288,11 +304,14 @@ def history():
                 print(f"✗ Database read error: {db_read_err}")
                 import traceback
                 traceback.print_exc()
-                return jsonify([])
+                resp = jsonify([])
+                resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+                return resp
 
             if not db_items:
-                print("No data in database")
-                return jsonify([])
+                resp = jsonify([])
+                resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+                return resp
 
             seen_texts = set()
             unique_items = []
@@ -306,12 +325,16 @@ def history():
             final_list = unique_items[:50]
 
             print(f"✓ Returning {len(final_list)} latest items")
-            return jsonify(final_list)
+            resp = jsonify(final_list)
+            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            return resp
     except Exception as e:
         print(f"✗ History error: {e}")
         import traceback
         traceback.print_exc()
-        return jsonify([])
+        resp = jsonify([])
+        resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        return resp
 
 @app.route('/db-status', methods=['GET'])
 def db_status():
