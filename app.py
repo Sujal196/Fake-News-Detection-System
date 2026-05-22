@@ -65,9 +65,42 @@ def get_kvdb_history():
 
 def get_db_path():
     if os.environ.get('VERCEL') == '1':
-        return '/tmp/predictions.db'
+        return None
     base_dir = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base_dir, 'predictions.db')
+
+def save_to_live_db(item):
+    """Save to KVDB for live deployment"""
+    try:
+        current_history = []
+        req = urllib.request.Request(KVDB_URL, headers={'User-Agent': 'Mozilla/5.0'})
+        try:
+            with urllib.request.urlopen(req, timeout=5) as response:
+                current_history = json.loads(response.read().decode('utf-8'))
+        except urllib.error.HTTPError as he:
+            if he.code != 404:
+                print(f"HTTP error fetching from kvdb: {he}")
+        except Exception as e:
+            print(f"Error fetching from kvdb: {e}")
+
+        current_history = [x for x in current_history if x.get('text', '').strip() != item['text'].strip()]
+        current_history.insert(0, item)
+        current_history = current_history[:100]
+
+        data_bytes = json.dumps(current_history).encode('utf-8')
+        post_req = urllib.request.Request(
+            KVDB_URL,
+            data=data_bytes,
+            headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'},
+            method='POST'
+        )
+        with urllib.request.urlopen(post_req, timeout=5) as response:
+            pass
+        print(f"✓ Saved to KVDB: {item['text'][:50]}... at {item['timestamp']}")
+        return True
+    except Exception as e:
+        print(f"✗ KVDB save error: {e}")
+        return False
 
 def init_db():
     try:
@@ -177,29 +210,35 @@ def predict():
 
         ist_timestamp = get_ist_time()
 
-        db_path = get_db_path()
-        print(f"Database path: {db_path}")
-        print(f"Database exists: {os.path.exists(db_path)}")
+        new_item = {
+            'text': text,
+            'prediction': result['prediction'],
+            'confidence': float(result['confidence']),
+            'timestamp': ist_timestamp
+        }
 
-        try:
-            conn = sqlite3.connect(db_path, timeout=10.0)
-            conn.isolation_level = None
-            cursor = conn.cursor()
+        is_vercel = os.environ.get('VERCEL') == '1'
 
-            cursor.execute(
-                "INSERT INTO history (input_text, prediction, confidence, timestamp) VALUES (?, ?, ?, ?)",
-                (text, result['prediction'], float(result['confidence']), ist_timestamp)
-            )
-
-            conn.commit()
-            cursor.close()
-            conn.close()
-
-            print(f"✓ Saved to DB: {text[:50]}... | Prediction: {result['prediction']} | Time: {ist_timestamp}")
-        except Exception as db_err:
-            print(f"✗ Database write error: {db_err}")
-            import traceback
-            traceback.print_exc()
+        if is_vercel:
+            save_to_live_db(new_item)
+        else:
+            db_path = get_db_path()
+            try:
+                conn = sqlite3.connect(db_path, timeout=10.0)
+                conn.isolation_level = None
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT INTO history (input_text, prediction, confidence, timestamp) VALUES (?, ?, ?, ?)",
+                    (text, result['prediction'], float(result['confidence']), ist_timestamp)
+                )
+                conn.commit()
+                cursor.close()
+                conn.close()
+                print(f"✓ Saved to SQLite: {text[:50]}... at {ist_timestamp}")
+            except Exception as db_err:
+                print(f"✗ SQLite error: {db_err}")
+                import traceback
+                traceback.print_exc()
 
         return jsonify(result)
     except Exception as e:
@@ -211,52 +250,63 @@ def predict():
 @app.route('/history', methods=['GET'])
 def history():
     try:
-        db_path = get_db_path()
-        db_items = []
+        is_vercel = os.environ.get('VERCEL') == '1'
 
-        try:
-            conn = sqlite3.connect(db_path, timeout=10.0)
-            conn.isolation_level = None
-            cursor = conn.cursor()
+        if is_vercel:
+            kvdb_data = get_kvdb_history()
+            if kvdb_data:
+                print(f"✓ Returned {len(kvdb_data[:50])} items from KVDB (LIVE)")
+                return jsonify(kvdb_data[:50])
+            else:
+                print("⚠ No data in KVDB")
+                return jsonify([])
+        else:
+            db_path = get_db_path()
+            db_items = []
 
-            cursor.execute("SELECT input_text, prediction, confidence, timestamp FROM history ORDER BY id DESC")
-            rows = cursor.fetchall()
+            try:
+                conn = sqlite3.connect(db_path, timeout=10.0)
+                conn.isolation_level = None
+                cursor = conn.cursor()
 
-            cursor.close()
-            conn.close()
+                cursor.execute("SELECT input_text, prediction, confidence, timestamp FROM history ORDER BY id DESC")
+                rows = cursor.fetchall()
 
-            print(f"✓ Fetched {len(rows)} records from database")
+                cursor.close()
+                conn.close()
 
-            for r in rows:
-                db_items.append({
-                    'text': r[0],
-                    'prediction': r[1],
-                    'confidence': float(r[2]),
-                    'timestamp': r[3]
-                })
-        except Exception as db_read_err:
-            print(f"✗ Database read error: {db_read_err}")
-            import traceback
-            traceback.print_exc()
-            return jsonify([])
+                print(f"✓ Fetched {len(rows)} records from SQLite")
 
-        if not db_items:
-            print("No data in database")
-            return jsonify([])
+                for r in rows:
+                    db_items.append({
+                        'text': r[0],
+                        'prediction': r[1],
+                        'confidence': float(r[2]),
+                        'timestamp': r[3]
+                    })
+            except Exception as db_read_err:
+                print(f"✗ Database read error: {db_read_err}")
+                import traceback
+                traceback.print_exc()
+                return jsonify([])
 
-        seen_texts = set()
-        unique_items = []
-        for item in db_items:
-            text_key = item.get('text', '').strip().lower()
-            if text_key and text_key not in seen_texts:
-                seen_texts.add(text_key)
-                unique_items.append(item)
+            if not db_items:
+                print("No data in database")
+                return jsonify([])
 
-        unique_items.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
-        final_list = unique_items[:2]
+            seen_texts = set()
+            unique_items = []
+            for item in db_items:
+                text_key = item.get('text', '').strip().lower()
+                if text_key and text_key not in seen_texts:
+                    seen_texts.add(text_key)
+                    unique_items.append(item)
 
-        print(f"✓ Returning {len(final_list)} latest items")
-        return jsonify(final_list)
+            unique_items.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+            final_list = unique_items[:50]
+
+            print(f"✓ Returning {len(final_list)} latest items")
+            return jsonify(final_list)
     except Exception as e:
         print(f"✗ History error: {e}")
         import traceback
