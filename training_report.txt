@@ -1,0 +1,25 @@
+FAKE NEWS DETECTION - TRAINING REPORT
+==================================================
+Training Date: 2026-05-21 14:12:13
+Dataset Size: 44,898 articles
+Fake News: 23,481 articles
+Real News: 21,417 articles
+
+MODEL PERFORMANCE:
+------------------------------
+Logistic Regression:
+  Accuracy: 0.9944
+  Precision: 0.9944
+  Recall: 0.9944
+  F1-score: 0.9944
+  Training Time: 12.35s
+
+Naive Bayes:
+  Accuracy: 0.9608
+  Precision: 0.9608
+  Recall: 0.9608
+  F1-score: 0.9608
+  Training Time: 0.90s
+
+BEST MODEL: Logistic Regression
+F1-SCORE: 0.9944
