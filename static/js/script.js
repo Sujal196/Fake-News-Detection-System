@@ -115,9 +115,6 @@ form.addEventListener('submit', async (e) => {
         renderResult(data);
         textArea.value = '';
         textArea.dispatchEvent(new Event('input'));
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        await loadHistory();
-        await new Promise(resolve => setTimeout(resolve, 1000));
         await loadHistory();
 
     } catch (err) {
@@ -334,7 +331,12 @@ async function loadHistory() {
     const historyContent = document.getElementById('historyContent');
     if (!historyContent) return;
 
-    historyContent.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.9rem;">Loading...</div>';
+    // Only show "Loading..." if the history is empty or contains placeholder text to prevent flicker
+    if (historyContent.children.length === 0 || 
+        historyContent.innerHTML.includes('No predictions stored yet.') || 
+        historyContent.innerHTML.includes('Loading database history...')) {
+        historyContent.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.9rem;">Loading...</div>';
+    }
 
     function parseTimestamp(ts) {
         if (!ts) return new Date(0);
