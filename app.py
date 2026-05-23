@@ -22,84 +22,53 @@ def get_ist_time():
     ist_tz = timezone(timedelta(hours=5, minutes=30))
     return datetime.now(ist_tz).strftime('%Y-%m-%d %H:%M:%S')
 
-def sync_to_kvdb(new_item):
-    try:
-        current_history = []
-        req = urllib.request.Request(KVDB_URL, headers={'User-Agent': 'Mozilla/5.0'})
-        try:
-            with urllib.request.urlopen(req, timeout=3) as response:
-                current_history = json.loads(response.read().decode('utf-8'))
-        except urllib.error.HTTPError as he:
-            if he.code != 404:
-                print(f"HTTP error fetching from kvdb: {he}")
-        except Exception as e:
-            print(f"Error fetching from kvdb: {e}")
-        
-        current_history = [item for item in current_history if item.get('text', '').strip() != new_item['text'].strip()]
-        current_history.insert(0, new_item)
-        current_history = current_history[:50]
-        
-        data_bytes = json.dumps(current_history).encode('utf-8')
-        post_req = urllib.request.Request(
-            KVDB_URL,
-            data=data_bytes,
-            headers={
-                'Content-Type': 'application/json',
-                'User-Agent': 'Mozilla/5.0'
-            },
-            method='POST'
-        )
-        with urllib.request.urlopen(post_req, timeout=3) as response:
-            pass
-    except Exception as e:
-        print(f"Failed to sync to kvdb: {e}")
-
 def get_kvdb_history():
     try:
         req = urllib.request.Request(KVDB_URL, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=3) as response:
-            return json.loads(response.read().decode('utf-8'))
+        with urllib.request.urlopen(req, timeout=8) as response:
+            data = response.read().decode('utf-8')
+            if not data or data.strip() == '':
+                return []
+            return json.loads(data)
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return []
+        print(f"KVDB GET error {e.code}: {e}")
+        return None
     except Exception as e:
         print(f"Failed to read from kvdb: {e}")
         return None
 
-def get_db_path():
-    if os.environ.get('VERCEL') == '1':
-        return None
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(base_dir, 'predictions.db')
-
-def save_to_live_db(item):
+def save_to_kvdb(item):
     try:
-        current_history = []
-        req = urllib.request.Request(KVDB_URL, headers={'User-Agent': 'Mozilla/5.0'})
-        try:
-            with urllib.request.urlopen(req, timeout=5) as response:
-                current_history = json.loads(response.read().decode('utf-8'))
-        except urllib.error.HTTPError as he:
-            if he.code != 404:
-                print(f"HTTP error fetching from kvdb: {he}")
-        except Exception as e:
-            print(f"Error fetching from kvdb: {e}")
+        current_history = get_kvdb_history() or []
 
         current_history = [x for x in current_history if x.get('text', '').strip() != item['text'].strip()]
         current_history.insert(0, item)
         current_history = current_history[:100]
 
         data_bytes = json.dumps(current_history).encode('utf-8')
-        post_req = urllib.request.Request(
+        put_req = urllib.request.Request(
             KVDB_URL,
             data=data_bytes,
             headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'},
-            method='POST'
+            method='PUT'
         )
-        with urllib.request.urlopen(post_req, timeout=5) as response:
-            pass
-        print(f"✓ Saved to KVDB: {item['text'][:50]}... at {item['timestamp']}")
+        with urllib.request.urlopen(put_req, timeout=8) as response:
+            status = response.getcode()
+            print(f"KVDB PUT status: {status}")
+
+        print(f"Saved to KVDB: {item['text'][:50]}...")
         return True
     except Exception as e:
-        print(f"✗ KVDB save error: {e}")
+        print(f"KVDB save error: {e}")
         return False
+
+def get_db_path():
+    if os.environ.get('VERCEL') == '1':
+        return None
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_dir, 'predictions.db')
 
 def init_db():
     try:
@@ -124,9 +93,9 @@ def init_db():
             pass
         conn.commit()
         conn.close()
-        print(f"✓ Database initialized at: {db_path}")
+        print(f"Database initialized at: {db_path}")
     except Exception as e:
-        print(f"✗ Database init error: {e}")
+        print(f"Database init error: {e}")
 
 def initialize_model():
     global detector, preprocessor
@@ -135,19 +104,19 @@ def initialize_model():
         base_dir = os.path.dirname(os.path.abspath(__file__))
         model_path = os.path.join(base_dir, 'models', 'final_model.pkl')
         vectorizer_path = os.path.join(base_dir, 'models', 'final_vectorizer.pkl')
-        
+
         if os.path.exists(model_path) and os.path.exists(vectorizer_path):
             print(f"Loading model from: {model_path}")
             detector = FakeNewsDetector()
             detector.load_model(model_path, vectorizer_path)
         else:
-            print(f"⚠️  Model not found at {model_path}!")
+            print(f"Model not found at {model_path}")
             return False
-        
+
         preprocessor = TextPreprocessor()
         print("Model initialized successfully!")
         return True
-        
+
     except Exception as e:
         print(f"Error initializing model: {str(e)}")
         import traceback
@@ -228,7 +197,8 @@ def predict():
         is_vercel = os.environ.get('VERCEL') == '1'
 
         if is_vercel:
-            save_to_live_db(new_item)
+            saved = save_to_kvdb(new_item)
+            print(f"Vercel KVDB save result: {saved}")
         else:
             db_path = get_db_path()
             try:
@@ -242,15 +212,16 @@ def predict():
                 conn.commit()
                 cursor.close()
                 conn.close()
-                print(f"✓ Saved to SQLite: {text[:50]}... at {ist_timestamp}")
+                print(f"Saved to SQLite: {text[:50]}... at {ist_timestamp}")
             except Exception as db_err:
-                print(f"✗ SQLite error: {db_err}")
+                print(f"SQLite error: {db_err}")
                 import traceback
                 traceback.print_exc()
+            save_to_kvdb(new_item)
 
         return jsonify(result)
     except Exception as e:
-        print(f"✗ Prediction error: {str(e)}")
+        print(f"Prediction error: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({'error': 'Failed to analyze text'}), 500
@@ -261,147 +232,72 @@ def history():
         is_vercel = os.environ.get('VERCEL') == '1'
         session_id = request.args.get('session_id', '').strip()
 
+        all_items = []
+
         if is_vercel:
             kvdb_data = get_kvdb_history()
             if kvdb_data:
-                if session_id:
-                    kvdb_data = [item for item in kvdb_data if item.get('session_id') == session_id]
-                resp = jsonify(kvdb_data[:50])
-                resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-                return resp
-            else:
-                resp = jsonify([])
-                resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-                return resp
+                all_items = kvdb_data
         else:
             db_path = get_db_path()
-            db_items = []
-
             try:
                 conn = sqlite3.connect(db_path, timeout=10.0)
                 conn.isolation_level = None
                 cursor = conn.cursor()
-
-                if session_id:
-                    cursor.execute("SELECT input_text, prediction, confidence, timestamp FROM history WHERE session_id = ? ORDER BY id DESC", (session_id,))
-                else:
-                    cursor.execute("SELECT input_text, prediction, confidence, timestamp FROM history ORDER BY id DESC")
+                cursor.execute("SELECT input_text, prediction, confidence, timestamp, session_id FROM history ORDER BY id DESC")
                 rows = cursor.fetchall()
-
                 cursor.close()
                 conn.close()
-
-                print(f"✓ Fetched {len(rows)} records from SQLite")
-
+                print(f"Fetched {len(rows)} records from SQLite")
                 for r in rows:
-                    db_items.append({
+                    all_items.append({
                         'text': r[0],
                         'prediction': r[1],
                         'confidence': float(r[2]),
-                        'timestamp': r[3]
+                        'timestamp': r[3],
+                        'session_id': r[4] or ''
                     })
             except Exception as db_read_err:
-                print(f"✗ Database read error: {db_read_err}")
+                print(f"Database read error: {db_read_err}")
                 import traceback
                 traceback.print_exc()
-                resp = jsonify([])
-                resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-                return resp
 
-            if not db_items:
-                resp = jsonify([])
-                resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-                return resp
+            kvdb_data = get_kvdb_history()
+            if kvdb_data:
+                existing_texts = {x.get('text', '').strip().lower() for x in all_items}
+                for kitem in kvdb_data:
+                    if kitem.get('text', '').strip().lower() not in existing_texts:
+                        all_items.append(kitem)
 
-            seen_texts = set()
-            unique_items = []
-            for item in db_items:
-                text_key = item.get('text', '').strip().lower()
-                if text_key and text_key not in seen_texts:
-                    seen_texts.add(text_key)
-                    unique_items.append(item)
+        if session_id and all_items:
+            filtered = [item for item in all_items if item.get('session_id', '') == session_id]
+            all_items = filtered
 
-            unique_items.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
-            final_list = unique_items[:50]
+        seen_texts = set()
+        unique_items = []
+        for item in all_items:
+            text_key = item.get('text', '').strip().lower()
+            if text_key and text_key not in seen_texts:
+                seen_texts.add(text_key)
+                unique_items.append(item)
 
-            print(f"✓ Returning {len(final_list)} latest items")
-            resp = jsonify(final_list)
-            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-            return resp
+        unique_items.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+        final_list = unique_items[:50]
+
+        print(f"Returning {len(final_list)} items for session_id={session_id!r}")
+        resp = jsonify(final_list)
+        resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        resp.headers['Pragma'] = 'no-cache'
+        resp.headers['Expires'] = '0'
+        return resp
+
     except Exception as e:
-        print(f"✗ History error: {e}")
+        print(f"History error: {e}")
         import traceback
         traceback.print_exc()
         resp = jsonify([])
         resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
         return resp
-
-@app.route('/db-status', methods=['GET'])
-def db_status():
-    try:
-        db_path = get_db_path()
-        exists = os.path.exists(db_path)
-        size = os.path.getsize(db_path) if exists else 0
-
-        conn = sqlite3.connect(db_path, timeout=10.0)
-        cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM history")
-        count = cursor.fetchone()[0]
-
-        cursor.execute("SELECT input_text, prediction, timestamp FROM history ORDER BY id DESC LIMIT 3")
-        recent = cursor.fetchall()
-        cursor.close()
-        conn.close()
-
-        recent_items = []
-        for r in recent:
-            recent_items.append({
-                'text': r[0][:50] + '...' if len(r[0]) > 50 else r[0],
-                'prediction': r[1],
-                'timestamp': r[2]
-            })
-
-        return jsonify({
-            'database_path': db_path,
-            'database_exists': exists,
-            'database_size_bytes': size,
-            'total_records': count,
-            'recent_3': recent_items,
-            'status': '✓ Working' if count > 0 else '⚠ Empty'
-        })
-    except Exception as e:
-        print(f"DB Status Error: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': str(e), 'status': '✗ Error'}), 500
-
-@app.route('/sync-history', methods=['GET'])
-def sync_history():
-    try:
-        db_items = []
-        try:
-            conn = sqlite3.connect(get_db_path())
-            cursor = conn.cursor()
-            cursor.execute("SELECT input_text, prediction, confidence, timestamp FROM history ORDER BY id DESC LIMIT 100")
-            rows = cursor.fetchall()
-            conn.close()
-            for r in rows:
-                db_items.append({
-                    'text': r[0],
-                    'prediction': r[1],
-                    'confidence': r[2],
-                    'timestamp': r[3]
-                })
-        except Exception as db_err:
-            print(f"Sync read error: {db_err}")
-
-        return jsonify({
-            'local_history': db_items,
-            'timestamp': get_ist_time()
-        })
-    except Exception as e:
-        print(f"Sync error: {e}")
-        return jsonify({'error': 'Sync failed'}), 500
 
 @app.route('/health')
 def health_check():
@@ -446,11 +342,11 @@ initialize_model()
 
 if __name__ == '__main__':
     print("Starting Fake News Detection System...")
-    
+
     if not os.path.exists('models'):
         os.makedirs('models')
-    
+
     print("Starting Flask server...")
     print("Access the application at: http://localhost:5000")
-    
+
     app.run(debug=True, host='0.0.0.0', port=5000)

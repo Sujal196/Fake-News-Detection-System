@@ -113,8 +113,12 @@ form.addEventListener('submit', async (e) => {
         const data = await response.json();
 
         renderResult(data);
-        await new Promise(resolve => setTimeout(resolve, 500));
-        loadHistory();
+        textArea.value = '';
+        textArea.dispatchEvent(new Event('input'));
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await loadHistory();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await loadHistory();
 
     } catch (err) {
         console.error(err);
@@ -330,33 +334,42 @@ async function loadHistory() {
     const historyContent = document.getElementById('historyContent');
     if (!historyContent) return;
 
+    historyContent.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.9rem;">Loading...</div>';
+
     function parseTimestamp(ts) {
-        if (!ts) return new Date();
+        if (!ts) return new Date(0);
         let clean = ts.trim();
 
         if (!clean.includes('T')) {
             const parts = clean.split(' ');
+            if (parts.length < 2) return new Date(0);
+
             const dateParts = parts[0].split('-');
             const timeParts = parts[1].split(':');
 
-            let d = new Date(
-                parseInt(dateParts[0]),
-                parseInt(dateParts[1]) - 1,
-                parseInt(dateParts[2]),
-                parseInt(timeParts[0]),
-                parseInt(timeParts[1]),
-                parseInt(timeParts[2])
-            );
+            if (dateParts.length !== 3 || timeParts.length < 2) return new Date(0);
 
-            const offset = new Date(d.getTime()).getTimezoneOffset() * 60000;
-            const istOffset = 5.5 * 60 * 60000;
-            const utcTime = d.getTime() + offset + istOffset;
-
-            return new Date(utcTime);
+            try {
+                let d = new Date(
+                    parseInt(dateParts[0]),
+                    parseInt(dateParts[1]) - 1,
+                    parseInt(dateParts[2]),
+                    parseInt(timeParts[0]),
+                    parseInt(timeParts[1]),
+                    parseInt(timeParts[2] || 0)
+                );
+                return d;
+            } catch (e) {
+                return new Date(0);
+            }
         } else {
-            let d = new Date(clean);
-            if (isNaN(d.getTime())) return new Date();
-            return d;
+            try {
+                let d = new Date(clean);
+                if (isNaN(d.getTime())) return new Date(0);
+                return d;
+            } catch (e) {
+                return new Date(0);
+            }
         }
     }
 
@@ -410,10 +423,15 @@ async function loadHistory() {
             text: item.text || '',
             prediction: item.prediction || 'Unknown',
             confidence: typeof item.confidence === 'number' ? item.confidence : 0,
-            timestamp: item.timestamp || new Date().toISOString()
+            timestamp: item.timestamp || new Date().toISOString(),
+            parsed_date: null
         })).filter(item => item.text.trim() !== '');
 
-        cleanedData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        cleanedData.forEach(item => {
+            item.parsed_date = parseTimestamp(item.timestamp);
+        });
+
+        cleanedData.sort((a, b) => b.parsed_date - a.parsed_date);
 
         renderList(cleanedData);
     } catch (err) {
