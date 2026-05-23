@@ -3,6 +3,7 @@ import os
 import pickle
 import sys
 import sqlite3
+import tempfile
 import urllib.request
 import urllib.error
 import json
@@ -100,9 +101,9 @@ def save_to_kvdb(item):
         return False
 
 def get_db_path():
-    if os.environ.get('VERCEL') == '1':
-        return None
     base_dir = os.path.dirname(os.path.abspath(__file__))
+    if os.environ.get('VERCEL') == '1':
+        return os.path.join(tempfile.gettempdir(), 'predictions.db')
     return os.path.join(base_dir, 'predictions.db')
 
 def init_db():
