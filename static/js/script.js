@@ -78,17 +78,7 @@ textArea.addEventListener('input', function () {
     this.style.height = (this.scrollHeight) + 'px';
 });
 
-document.querySelectorAll('.ex-tag[data-example]').forEach(tag => {
-    tag.addEventListener('click', () => {
-        const type = tag.dataset.example;
-        if (type === 'fake') {
-            textArea.value = "SHOCKING: Secret cure doctors don't want you to know! This miracle pill cures all diseases overnight. Big pharma conspiracy revealed as alien technology is found in vaccines.";
-        } else {
-            textArea.value = "Scientists at Harvard University published a new peer-reviewed study in the Journal of Medicine showing clinical trial results with 85 percent improvement in patient outcomes after the new treatment protocol.";
-        }
-        textArea.dispatchEvent(new Event('input'));
-    });
-});
+
 
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
