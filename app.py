@@ -1,12 +1,8 @@
 from flask import Flask, render_template, request, jsonify
 import os
-import pickle
 import sys
 import sqlite3
 import tempfile
-import urllib.request
-import urllib.error
-import json
 from datetime import datetime, timedelta, timezone
 from data_preprocessing import TextPreprocessor
 from ml_models import FakeNewsDetector
@@ -17,88 +13,9 @@ app = Flask(__name__)
 detector = None
 preprocessor = None
 
-KVDB_URL = os.environ.get('KVDB_URL', "https://kvdb.io/4UwJyhr3ootyftcgQJHkMP/history")
-KVDB_TOKEN = os.environ.get('KVDB_TOKEN', '').strip()
-# Optional: name of header to use for the token (default: Authorization Bearer)
-KVDB_AUTH_HEADER = os.environ.get('KVDB_AUTH_HEADER', '').strip()
-
 def get_ist_time():
     ist_tz = timezone(timedelta(hours=5, minutes=30))
     return datetime.now(ist_tz).strftime('%Y-%m-%d %H:%M:%S')
-
-def get_kvdb_history():
-    try:
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        if KVDB_TOKEN:
-            if KVDB_AUTH_HEADER:
-                headers[KVDB_AUTH_HEADER] = KVDB_TOKEN
-            else:
-                headers['Authorization'] = f'Bearer {KVDB_TOKEN}'
-
-        req = urllib.request.Request(KVDB_URL, headers=headers)
-        with urllib.request.urlopen(req, timeout=8) as response:
-            data = response.read().decode('utf-8')
-            if not data or data.strip() == '':
-                return []
-            return json.loads(data)
-    except urllib.error.HTTPError as e:
-        if e.code == 404:
-            return []
-        print(f"KVDB GET error {e.code}: {e}")
-        return None
-    except Exception as e:
-        print(f"Failed to read from kvdb: {e}")
-        return None
-
-def save_to_kvdb(item):
-    try:
-        # Read existing history (may return None on failure)
-        current_history = get_kvdb_history() or []
-
-        # Deduplicate and prepend
-        current_history = [x for x in current_history if x.get('text', '').strip() != item['text'].strip()]
-        current_history.insert(0, item)
-        current_history = current_history[:100]
-
-        data_bytes = json.dumps(current_history).encode('utf-8')
-
-        # prepare headers with optional auth
-        headers = {'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'}
-        if KVDB_TOKEN:
-            if KVDB_AUTH_HEADER:
-                headers[KVDB_AUTH_HEADER] = KVDB_TOKEN
-            else:
-                headers['Authorization'] = f'Bearer {KVDB_TOKEN}'
-
-        # simple retry loop for transient network issues
-        attempts = 0
-        max_attempts = 2
-        while attempts < max_attempts:
-            try:
-                put_req = urllib.request.Request(
-                    KVDB_URL,
-                    data=data_bytes,
-                    headers=headers,
-                    method='PUT'
-                )
-                with urllib.request.urlopen(put_req, timeout=8) as response:
-                    status = response.getcode()
-                    print(f"KVDB PUT status: {status}")
-                    print(f"Saved to KVDB: {item['text'][:50]}...")
-                    return True
-            except urllib.error.HTTPError as e:
-                # non-transient (auth/permission) errors should not be retried
-                print(f"KVDB PUT HTTPError {e.code}: {e}")
-                return False
-            except Exception as e:
-                print(f"KVDB PUT attempt {attempts+1} failed: {e}")
-                attempts += 1
-                if attempts >= max_attempts:
-                    print("KVDB PUT: all attempts failed")
-                    return False
-    except Exception as e:
-        print(f"KVDB save error: {e}")
-        return False
 
 def get_db_path():
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -200,6 +117,57 @@ def fallback_predict(text):
         'explanation': explanation
     }
 
+def save_to_db(text, prediction, confidence, timestamp, session_id):
+    """Save a prediction result to the local SQLite database."""
+    try:
+        db_path = get_db_path()
+        conn = sqlite3.connect(db_path, timeout=10.0)
+        conn.isolation_level = None
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO history (input_text, prediction, confidence, timestamp, session_id) VALUES (?, ?, ?, ?, ?)",
+            (text, prediction, float(confidence), timestamp, session_id)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print(f"Saved to SQLite: {text[:50]}... at {timestamp}")
+    except Exception as db_err:
+        print(f"SQLite save error: {db_err}")
+        import traceback
+        traceback.print_exc()
+
+def read_from_db():
+    """Read all prediction history from the local SQLite database."""
+    items = []
+    try:
+        db_path = get_db_path()
+        if not db_path or not os.path.exists(db_path):
+            return items
+        conn = sqlite3.connect(db_path, timeout=10.0)
+        conn.isolation_level = None
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT input_text, prediction, confidence, timestamp, session_id FROM history ORDER BY id DESC"
+        )
+        rows = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        print(f"Fetched {len(rows)} records from SQLite")
+        for r in rows:
+            items.append({
+                'text': r[0],
+                'prediction': r[1],
+                'confidence': float(r[2]),
+                'timestamp': r[3],
+                'session_id': r[4] or ''
+            })
+    except Exception as db_err:
+        print(f"SQLite read error: {db_err}")
+        import traceback
+        traceback.print_exc()
+    return items
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -222,61 +190,7 @@ def predict():
 
         ist_timestamp = get_ist_time()
 
-        new_item = {
-            'text': text,
-            'prediction': result['prediction'],
-            'confidence': float(result['confidence']),
-            'timestamp': ist_timestamp,
-            'session_id': session_id
-        }
-
-        is_vercel = os.environ.get('VERCEL') == '1'
-
-        if is_vercel:
-            saved = save_to_kvdb(new_item)
-            print(f"Vercel KVDB save result: {saved}")
-            # If KVDB save failed, attempt to persist locally as a best-effort
-            # fallback so history is still available for the session.
-            if not saved:
-                # Use project-local DB file even on Vercel as a best-effort fallback.
-                base_dir = os.path.dirname(os.path.abspath(__file__))
-                db_path = get_db_path() or os.path.join(base_dir, 'predictions.db')
-                if db_path:
-                    try:
-                        conn = sqlite3.connect(db_path, timeout=10.0)
-                        conn.isolation_level = None
-                        cursor = conn.cursor()
-                        cursor.execute(
-                            "INSERT INTO history (input_text, prediction, confidence, timestamp, session_id) VALUES (?, ?, ?, ?, ?)",
-                            (text, result['prediction'], float(result['confidence']), ist_timestamp, session_id)
-                        )
-                        conn.commit()
-                        cursor.close()
-                        conn.close()
-                        print(f"Saved to SQLite (fallback): {text[:50]}... at {ist_timestamp}")
-                    except Exception as db_err:
-                        print(f"SQLite fallback error: {db_err}")
-                        import traceback
-                        traceback.print_exc()
-        else:
-            db_path = get_db_path()
-            try:
-                conn = sqlite3.connect(db_path, timeout=10.0)
-                conn.isolation_level = None
-                cursor = conn.cursor()
-                cursor.execute(
-                    "INSERT INTO history (input_text, prediction, confidence, timestamp, session_id) VALUES (?, ?, ?, ?, ?)",
-                    (text, result['prediction'], float(result['confidence']), ist_timestamp, session_id)
-                )
-                conn.commit()
-                cursor.close()
-                conn.close()
-                print(f"Saved to SQLite: {text[:50]}... at {ist_timestamp}")
-            except Exception as db_err:
-                print(f"SQLite error: {db_err}")
-                import traceback
-                traceback.print_exc()
-            save_to_kvdb(new_item)
+        save_to_db(text, result['prediction'], result['confidence'], ist_timestamp, session_id)
 
         return jsonify(result)
     except Exception as e:
@@ -288,81 +202,12 @@ def predict():
 @app.route('/history', methods=['GET'])
 def history():
     try:
-        is_vercel = os.environ.get('VERCEL') == '1'
         session_id = request.args.get('session_id', '').strip()
-        base_dir = os.path.dirname(os.path.abspath(__file__))
 
-        all_items = []
-
-        if is_vercel:
-            # Try KVDB first (used on Vercel). If KVDB is unavailable or returns
-            # None (e.g., permission/403 errors), fall back to local SQLite if
-            # present so history still works during misconfiguration.
-            kvdb_data = get_kvdb_history()
-            if kvdb_data:
-                all_items = kvdb_data
-            else:
-                # KVDB read failed; attempt to read local DB as a best-effort fallback.
-                db_path = get_db_path()
-                # if get_db_path() returns None (e.g., Vercel), try project-local file
-                if not db_path:
-                    db_path = os.path.join(base_dir, 'predictions.db')
-                if db_path and os.path.exists(db_path):
-                    try:
-                        conn = sqlite3.connect(db_path, timeout=10.0)
-                        conn.isolation_level = None
-                        cursor = conn.cursor()
-                        cursor.execute("SELECT input_text, prediction, confidence, timestamp, session_id FROM history ORDER BY id DESC")
-                        rows = cursor.fetchall()
-                        cursor.close()
-                        conn.close()
-                        print(f"Fetched {len(rows)} records from SQLite (fallback)")
-                        for r in rows:
-                            all_items.append({
-                                'text': r[0],
-                                'prediction': r[1],
-                                'confidence': float(r[2]),
-                                'timestamp': r[3],
-                                'session_id': r[4] or ''
-                            })
-                    except Exception as db_read_err:
-                        print(f"Database read error (fallback): {db_read_err}")
-                        import traceback
-                        traceback.print_exc()
-        else:
-            db_path = get_db_path()
-            try:
-                conn = sqlite3.connect(db_path, timeout=10.0)
-                conn.isolation_level = None
-                cursor = conn.cursor()
-                cursor.execute("SELECT input_text, prediction, confidence, timestamp, session_id FROM history ORDER BY id DESC")
-                rows = cursor.fetchall()
-                cursor.close()
-                conn.close()
-                print(f"Fetched {len(rows)} records from SQLite")
-                for r in rows:
-                    all_items.append({
-                        'text': r[0],
-                        'prediction': r[1],
-                        'confidence': float(r[2]),
-                        'timestamp': r[3],
-                        'session_id': r[4] or ''
-                    })
-            except Exception as db_read_err:
-                print(f"Database read error: {db_read_err}")
-                import traceback
-                traceback.print_exc()
-
-            kvdb_data = get_kvdb_history()
-            if kvdb_data:
-                existing_texts = {x.get('text', '').strip().lower() for x in all_items}
-                for kitem in kvdb_data:
-                    if kitem.get('text', '').strip().lower() not in existing_texts:
-                        all_items.append(kitem)
+        all_items = read_from_db()
 
         if session_id and all_items:
-            filtered = [item for item in all_items if item.get('session_id', '') == session_id]
-            all_items = filtered
+            all_items = [item for item in all_items if item.get('session_id', '') == session_id]
 
         seen_texts = set()
         unique_items = []
