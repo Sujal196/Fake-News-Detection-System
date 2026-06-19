@@ -17,7 +17,7 @@ app = Flask(__name__)
 detector = None
 preprocessor = None
 
-KVDB_URL = os.environ.get('KVDB_URL', "https://kvdb.io/YG9gdzbbU4PfdDAWHFmRNd/history")
+KVDB_URL = os.environ.get('KVDB_URL', "https://kvdb.io/4UwJyhr3ootyftcgQJHkMP/history")
 KVDB_TOKEN = os.environ.get('KVDB_TOKEN', '').strip()
 # Optional: name of header to use for the token (default: Authorization Bearer)
 KVDB_AUTH_HEADER = os.environ.get('KVDB_AUTH_HEADER', '').strip()
