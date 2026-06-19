@@ -392,7 +392,7 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
 }
 
 .btn-ghost {
-  background: transparent;
+  background: var(--surface);
   color: var(--text);
   padding: 16px 32px;
   border-radius: 12px;
@@ -400,12 +400,15 @@ h1, h2, h3, h4, .sec-badge, .nav-logo {
   font-weight: 600;
   font-size: 1.1rem;
   border: 1px solid var(--border);
-  transition: var(--transition);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
 .btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: var(--text-muted);
+  background: var(--border);
+  border-color: var(--primary);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1), 0 0 15px var(--primary-glow);
 }
 
 
