@@ -57,3 +57,7 @@ fake_news_detection/
     └── js/
         └── script.js        # JavaScript functionality
 ```
+## Open the Portal
+Open your web browser and navigate to:
+👉 **https://fake-news-detection-system-livid.vercel.app/**
+
