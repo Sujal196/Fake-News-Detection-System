@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: truthscan-fake-news-detector
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB_NAME
+        value: truthscan
+      - key: MONGODB_COLLECTION
+        value: history

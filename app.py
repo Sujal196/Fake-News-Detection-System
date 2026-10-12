@@ -1,9 +1,16 @@
 from flask import Flask, render_template, request, jsonify
 import os
 import sys
-import sqlite3
-import tempfile
 from datetime import datetime, timedelta, timezone
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    pass
+
+import pymongo
+from pymongo import MongoClient
+
 from data_preprocessing import TextPreprocessor
 from ml_models import FakeNewsDetector
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -13,42 +20,60 @@ app = Flask(__name__)
 detector = None
 preprocessor = None
 
+# MongoDB Configuration
+MONGO_URI = os.environ.get(
+    'MONGODB_URI',
+    'mongodb+srv://sujalsahu196_db_user:<db_password>@drishtix.dzxbcvj.mongodb.net/truthscan?retryWrites=true&w=majority&appName=DrishtiX'
+)
+MONGO_DB_NAME = os.environ.get('MONGODB_DB_NAME', 'truthscan')
+MONGO_COLLECTION_NAME = os.environ.get('MONGODB_COLLECTION', 'history')
+
+mongo_client = None
+mongo_collection = None
+
+def get_mongo_collection():
+    global mongo_client, mongo_collection
+    if mongo_collection is not None:
+        return mongo_collection
+
+    uri = os.environ.get('MONGODB_URI', MONGO_URI)
+    if not uri or '<db_password>' in uri:
+        return None
+
+    try:
+        if mongo_client is None:
+            mongo_client = MongoClient(
+                uri,
+                serverSelectionTimeoutMS=4000,
+                connectTimeoutMS=4000
+            )
+            # Verify connectivity
+            mongo_client.admin.command('ping')
+            print("[MongoDB] Successfully connected to MongoDB Atlas!")
+        db = mongo_client[MONGO_DB_NAME]
+        mongo_collection = db[MONGO_COLLECTION_NAME]
+        return mongo_collection
+    except Exception as e:
+        print(f"[MongoDB] Connection error: {e}")
+        mongo_client = None
+        mongo_collection = None
+        return None
+
+
 def get_ist_time():
     ist_tz = timezone(timedelta(hours=5, minutes=30))
     return datetime.now(ist_tz).strftime('%Y-%m-%d %H:%M:%S')
 
-def get_db_path():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    if os.environ.get('VERCEL') == '1':
-        return os.path.join(tempfile.gettempdir(), 'predictions.db')
-    return os.path.join(base_dir, 'predictions.db')
-
 def init_db():
+    """Initialize MongoDB collection and indexes."""
     try:
-        db_path = get_db_path()
-        if not db_path:
-            return
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                input_text TEXT NOT NULL,
-                prediction TEXT NOT NULL,
-                confidence REAL NOT NULL,
-                timestamp TEXT NOT NULL,
-                session_id TEXT
-            )
-        ''')
-        try:
-            cursor.execute("ALTER TABLE history ADD COLUMN session_id TEXT")
-        except sqlite3.OperationalError:
-            pass
-        conn.commit()
-        conn.close()
-        print(f"Database initialized at: {db_path}")
-    except Exception as e:
-        print(f"Database init error: {e}")
+        col = get_mongo_collection()
+        if col is not None:
+            col.create_index([("session_id", pymongo.ASCENDING)])
+            col.create_index([("timestamp", pymongo.DESCENDING)])
+            print("[MongoDB] Indexes initialized successfully.")
+    except Exception as me:
+        print(f"[MongoDB] Index init notice: {me}")
 
 def initialize_model():
     global detector, preprocessor
@@ -118,55 +143,50 @@ def fallback_predict(text):
     }
 
 def save_to_db(text, prediction, confidence, timestamp, session_id):
-    """Save a prediction result to the local SQLite database."""
+    """Save a prediction result to MongoDB Atlas."""
     try:
-        db_path = get_db_path()
-        conn = sqlite3.connect(db_path, timeout=10.0)
-        conn.isolation_level = None
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO history (input_text, prediction, confidence, timestamp, session_id) VALUES (?, ?, ?, ?, ?)",
-            (text, prediction, float(confidence), timestamp, session_id)
-        )
-        conn.commit()
-        cursor.close()
-        conn.close()
-        print(f"Saved to SQLite: {text[:50]}... at {timestamp}")
-    except Exception as db_err:
-        print(f"SQLite save error: {db_err}")
-        import traceback
-        traceback.print_exc()
+        col = get_mongo_collection()
+        if col is not None:
+            doc = {
+                'input_text': text,
+                'prediction': prediction,
+                'confidence': float(confidence),
+                'timestamp': timestamp,
+                'session_id': session_id or ''
+            }
+            col.insert_one(doc)
+            print(f"[MongoDB] Saved to Atlas: {text[:50]}... at {timestamp}")
+        else:
+            print(f"[MongoDB] Skipped saving: MongoDB is not connected yet (check .env / MONGODB_URI).")
+    except Exception as m_err:
+        print(f"[MongoDB] Save error: {m_err}")
 
-def read_from_db():
-    """Read all prediction history from the local SQLite database."""
+def read_from_db(session_id=None):
+    """Read prediction history from MongoDB Atlas."""
     items = []
     try:
-        db_path = get_db_path()
-        if not db_path or not os.path.exists(db_path):
-            return items
-        conn = sqlite3.connect(db_path, timeout=10.0)
-        conn.isolation_level = None
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT input_text, prediction, confidence, timestamp, session_id FROM history ORDER BY id DESC"
-        )
-        rows = cursor.fetchall()
-        cursor.close()
-        conn.close()
-        print(f"Fetched {len(rows)} records from SQLite")
-        for r in rows:
-            items.append({
-                'text': r[0],
-                'prediction': r[1],
-                'confidence': float(r[2]),
-                'timestamp': r[3],
-                'session_id': r[4] or ''
-            })
-    except Exception as db_err:
-        print(f"SQLite read error: {db_err}")
-        import traceback
-        traceback.print_exc()
+        col = get_mongo_collection()
+        if col is not None:
+            query = {}
+            if session_id:
+                query['session_id'] = session_id
+            cursor = col.find(query).sort('_id', -1).limit(100)
+            for doc in cursor:
+                items.append({
+                    'text': doc.get('input_text') or doc.get('text', ''),
+                    'prediction': doc.get('prediction', ''),
+                    'confidence': float(doc.get('confidence', 0.0)),
+                    'timestamp': doc.get('timestamp', ''),
+                    'session_id': doc.get('session_id', '')
+                })
+            print(f"[MongoDB] Fetched {len(items)} records from MongoDB Atlas")
+        else:
+            print("[MongoDB] History fetch: MongoDB is not connected yet.")
+    except Exception as m_err:
+        print(f"[MongoDB] Read error: {m_err}")
     return items
+
+
 
 @app.route('/')
 def home():
@@ -204,10 +224,7 @@ def history():
     try:
         session_id = request.args.get('session_id', '').strip()
 
-        all_items = read_from_db()
-
-        if session_id and all_items:
-            all_items = [item for item in all_items if item.get('session_id', '') == session_id]
+        all_items = read_from_db(session_id=session_id)
 
         seen_texts = set()
         unique_items = []
@@ -237,8 +254,17 @@ def history():
 
 @app.route('/health')
 def health_check():
+    mongo_active = False
+    try:
+        col = get_mongo_collection()
+        mongo_active = col is not None
+    except Exception:
+        mongo_active = False
+
     return jsonify({
         'status': 'healthy',
+        'database': 'mongodb' if mongo_active else 'disconnected',
+        'mongodb_connected': mongo_active,
         'model_loaded': detector is not None,
         'preprocessor_loaded': preprocessor is not None
     })
@@ -252,6 +278,7 @@ def about():
             'Machine Learning (Logistic Regression, Naive Bayes)',
             'Natural Language Processing',
             'TF-IDF Feature Extraction',
+            'MongoDB Atlas (Cloud Database)',
             'Flask Web Framework',
             'HTML/CSS/JavaScript'
         ],
@@ -261,9 +288,11 @@ def about():
             'Feature extraction using TF-IDF',
             'Multiple classification algorithms',
             'Performance evaluation metrics',
+            'Cloud-persistent history via MongoDB Atlas',
             'Web-based user interface'
         ]
     })
+
 
 @app.errorhandler(404)
 def not_found(error):
@@ -282,7 +311,6 @@ if __name__ == '__main__':
     if not os.path.exists('models'):
         os.makedirs('models')
 
-    print("Starting Flask server...")
-    print("Access the application at: http://localhost:5000")
-
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    print(f"Starting Flask server on port {port}...")
+    app.run(host='0.0.0.0', port=port)

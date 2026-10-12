@@ -3,3 +3,6 @@ scikit-learn>=1.4.0
 nltk>=3.8.0
 flask>=2.3.0
 gunicorn
+pymongo>=4.6.0
+dnspython>=2.4.0
+python-dotenv>=1.0.0

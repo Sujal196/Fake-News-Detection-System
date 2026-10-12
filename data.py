@@ -1,39 +1,62 @@
-import sqlite3
 import os
+import sys
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    pass
 
-db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'predictions.db')
+try:
+    import pymongo
+    from pymongo import MongoClient
+except ImportError:
+    pymongo = None
+    MongoClient = None
 
-print("=" * 60)
-print("  Fake News Detection System - Data Viewer")
-print("=" * 60)
+print("=" * 65)
+print("     Fake News Detection System - MongoDB Atlas Data Viewer")
+print("=" * 65)
 
-# -- Check Local SQLite DB ----------------------------------
-print("\n[LOCAL] Checking local SQLite database (predictions.db)...")
+mongo_uri = os.environ.get(
+    'MONGODB_URI',
+    'mongodb+srv://sujalsahu196_db_user:<db_password>@drishtix.dzxbcvj.mongodb.net/truthscan?retryWrites=true&w=majority&appName=DrishtiX'
+)
 
-if not os.path.exists(db_path):
-    print("[WARN] predictions.db not found locally.")
-    print("       Run the Flask app first and make at least one prediction.")
+if MongoClient is None:
+    print("\n[ERR] pymongo is not installed. Please run: pip install pymongo dnspython")
+elif '<db_password>' in mongo_uri:
+    print("\n[INFO] Placeholder <db_password> detected in .env / MONGODB_URI.")
+    print("       To connect to your cluster, replace <db_password> with your actual")
+    print("       database password in the .env file.")
 else:
     try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM history")
-        count = cursor.fetchone()[0]
-        print(f"[OK] Found {count} record(s) in local SQLite:\n")
-        cursor.execute(
-            "SELECT input_text, prediction, confidence, timestamp FROM history ORDER BY id DESC LIMIT 20"
-        )
-        rows = cursor.fetchall()
-        for i, row in enumerate(rows, 1):
-            print(f"  [{i}] {row[3]} | {row[1]:10s} | Conf: {row[2]:.2%} | Text: {row[0][:60]}...")
-        conn.close()
-        if count == 0:
-            print("  (No predictions made yet)")
-    except Exception as e:
-        print(f"[ERR] SQLite error: {e}")
+        print("\n[CONNECTING] Connecting to MongoDB Atlas cluster...")
+        client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+        client.admin.command('ping')
+        db_name = os.environ.get('MONGODB_DB_NAME', 'truthscan')
+        coll_name = os.environ.get('MONGODB_COLLECTION', 'history')
+        db = client[db_name]
+        collection = db[coll_name]
 
-print("\n" + "=" * 60)
-print("  Summary:")
-print("  - All prediction history is stored in predictions.db (SQLite)")
-print("  - History is available locally and on Vercel (in /tmp)")
-print("=" * 60)
+        count = collection.count_documents({})
+        print(f"[OK] Successfully connected to MongoDB Atlas! (Database: '{db_name}', Collection: '{coll_name}')")
+        print(f"     Total predictions stored: {count}\n")
+
+        cursor = collection.find().sort('_id', -1).limit(25)
+        for i, doc in enumerate(cursor, 1):
+            text = (doc.get('input_text') or doc.get('text', ''))[:60]
+            pred = doc.get('prediction', 'Unknown')
+            conf = float(doc.get('confidence', 0.0))
+            ts = doc.get('timestamp', 'N/A')
+            sess = doc.get('session_id', '')[:12]
+            print(f"  [{i:02d}] {ts} | {pred:10s} | Conf: {conf:.2%} | Sess: {sess}... | Text: {text}...")
+
+        if count == 0:
+            print("  (No predictions stored in MongoDB Atlas yet. Submit an article in TruthScan to test!)")
+    except Exception as me:
+        print(f"\n[ERR] MongoDB Atlas connection error: {me}")
+
+print("\n" + "=" * 65)
+print("  Database Engine: MongoDB Atlas (Cloud NoSQL)")
+print("  Vercel Persistence: Fully supported with real-time updates")
+print("=" * 65)
