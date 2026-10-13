@@ -8,10 +8,11 @@
     <title>TruthScan — AI Fake News Detection System</title>
     <meta name="description"
         content="TruthScan: Advanced AI-powered fake news detection system. Verify news articles instantly with 99.93% accuracy using our machine learning engine.">
-    <meta name="keywords" content="TruthScan, Fake News Detection, AI News Verifier, Truth Scan, Machine Learning News Analysis, Verify News, Fake News AI">
+    <meta name="keywords"
+        content="TruthScan, Fake News Detection, AI News Verifier, Truth Scan, Machine Learning News Analysis, Verify News, Fake News AI">
     <meta name="author" content="Sujal Sahu">
-    
-    
+
+
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://truthscan.vercel.app/">
     <meta property="og:title" content="TruthScan — AI Fake News Detection System">
@@ -26,13 +27,13 @@
 </head>
 
 <body>
-    
+
     <div class="bg-grid"></div>
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
 
-    
+
     <nav class="navbar" id="navbar">
         <div class="nav-inner">
             <div class="nav-logo">
@@ -78,7 +79,7 @@
         </div>
     </nav>
 
-    
+
     <section class="hero" id="home">
         <div class="hero-content">
             <div class="hero-badge">
@@ -146,7 +147,7 @@
         </div>
     </section>
 
-    
+
     <section class="section" id="analyze">
         <div class="section-inner">
             <div class="sec-header">
@@ -195,22 +196,26 @@
             <div id="loadingSection" style="display:none">
                 <div class="result-card" style="padding: 30px; position: relative; overflow: hidden;">
                     <div class="scanning-line"></div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 20px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 20px;">
                         <div style="display: flex; align-items: center; gap: 20px;">
-                            <div class="skeleton" style="width: 60px; height: 60px; border-radius: 16px; flex-shrink: 0;"></div>
+                            <div class="skeleton"
+                                style="width: 60px; height: 60px; border-radius: 16px; flex-shrink: 0;"></div>
                             <div>
-                                <div class="skeleton" style="width: min(150px, 40vw); height: 28px; margin-bottom: 8px;"></div>
+                                <div class="skeleton"
+                                    style="width: min(150px, 40vw); height: 28px; margin-bottom: 8px;"></div>
                                 <div class="skeleton" style="width: min(100px, 28vw); height: 16px;"></div>
                             </div>
                         </div>
-                        <div class="skeleton" style="width: 100px; height: 100px; border-radius: 50%; flex-shrink: 0;"></div>
+                        <div class="skeleton" style="width: 100px; height: 100px; border-radius: 50%; flex-shrink: 0;">
+                        </div>
                     </div>
                     <div class="skeleton" style="width: 100%; height: 100px; border-radius: 16px;"></div>
                 </div>
             </div>
 
 
-            
+
             <div id="resultSection" style="display:none">
                 <div class="result-card" id="resultCard">
                     <div class="result-glow" id="rGlow"></div>
@@ -272,14 +277,18 @@
 
             <div id="historySection" class="history-section">
                 <div class="result-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
-                        <h3 style="margin: 0; font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 24px; height: 24px; color: var(--primary);">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+                        <h3
+                            style="margin: 0; font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                style="width: 24px; height: 24px; color: var(--primary);">
                                 <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             Recent Analysis History
                         </h3>
-                        <button id="refreshHistoryBtn" class="history-refresh-btn" style="border: none; outline: none; padding: 8px 16px; border-radius: 8px;">
+                        <button id="refreshHistoryBtn" class="history-refresh-btn"
+                            style="border: none; outline: none; padding: 8px 16px; border-radius: 8px;">
                             Refresh History
                         </button>
                     </div>
@@ -293,7 +302,7 @@
         </div>
     </section>
 
-    
+
     <section class="section" id="features">
         <div class="section-inner">
             <div class="sec-header">
@@ -354,7 +363,7 @@
         </div>
     </section>
 
-    
+
     <section class="section" id="how-it-works">
         <div class="section-inner">
             <div class="sec-header">
@@ -387,7 +396,7 @@
         </div>
     </section>
 
-    
+
     <footer class="footer">
         <div class="footer-inner">
             <div class="footer-top">
@@ -406,17 +415,6 @@
                     <span>📰 44,898 Articles</span>
                     <span>⚡ Real-Time</span>
                 </div>
-                <div class="footer-devs">
-                    <p>Designed & Developed by</p>
-                    <div class="dev-images">
-                        <div class="dev-img-wrapper">
-                            <img src="/static/img/dev1.png" alt="Developer" class="dev-1">
-                        </div>
-                        <div class="dev-img-wrapper">
-                            <img src="/static/img/dev2.png" alt="Developer" class="dev-2">
-                        </div>
-                    </div>
-                </div>
             </div>
             <div class="footer-bottom">
                 <p>© 2026 TruthScan — All Rights Reserved.</p>
@@ -424,13 +422,13 @@
         </div>
     </footer>
 
-    
+
     <div id="toastContainer" class="toast-container"></div>
 
     <script src="/static/js/script.js?v=50.0"></script>
 
 
-    
+
     <script defer src="/_vercel/insights/script.js"></script>
 </body>
 
