@@ -27,7 +27,7 @@ preprocessor = None
 # MongoDB Configuration
 MONGO_URI = os.environ.get(
     'MONGODB_URI',
-    'mongodb+srv://sujalsahu196_db_user:<db_password>@drishtix.dzxbcvj.mongodb.net/truthscan?retryWrites=true&w=majority&appName=DrishtiX'
+    'mongodb+srv://sujalsahu196_db_user:TyF7BIdAkZasKP9q@drishtix.dzxbcvj.mongodb.net/truthscan?retryWrites=true&w=majority&appName=DrishtiX'
 )
 MONGO_DB_NAME = os.environ.get('MONGODB_DB_NAME', 'truthscan')
 MONGO_COLLECTION_NAME = os.environ.get('MONGODB_COLLECTION', 'history')
@@ -41,7 +41,7 @@ def get_mongo_collection():
         return mongo_collection
 
     uri = os.environ.get('MONGODB_URI', MONGO_URI)
-    if not uri or '<db_password>' in uri:
+    if not uri:
         return None
 
     try:
@@ -204,6 +204,10 @@ def favicon():
     if os.path.exists(os.path.join(img_dir, 'logo.png')):
         return send_from_directory(img_dir, 'logo.png', mimetype='image/png')
     return ('', 204)
+
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    return send_from_directory(os.path.join(app.root_path, 'static'), filename)
 
 @app.route('/api')
 def api_root():
