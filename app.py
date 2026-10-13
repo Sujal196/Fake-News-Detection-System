@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
+
 import os
 import sys
 from datetime import datetime, timedelta, timezone
@@ -195,10 +196,39 @@ def read_from_db(session_id=None):
 def home():
     return render_template('index.html')
 
-@app.route('/predict', methods=['POST'])
+@app.route('/favicon.ico')
+def favicon():
+    img_dir = os.path.join(app.root_path, 'static', 'img')
+    if os.path.exists(os.path.join(img_dir, 'logo.png')):
+        return send_from_directory(img_dir, 'logo.png', mimetype='image/png')
+    return ('', 204)
+
+@app.route('/api')
+def api_root():
+    return jsonify({
+        'name': 'TruthScan AI Fake News Detection API',
+        'status': 'online',
+        'endpoints': {
+            'health': '/health',
+            'predict': '/predict (POST)',
+            'history': '/history (GET)',
+            'about': '/about (GET)'
+        }
+    })
+
+@app.route('/predict', methods=['GET', 'POST'])
+@app.route('/api/predict', methods=['GET', 'POST'])
 def predict():
+    if request.method == 'GET':
+        return jsonify({
+            'status': 'online',
+            'endpoint': '/predict',
+            'method': 'POST',
+            'message': 'Fake News Detection API is active.',
+            'usage': 'Send a POST request with JSON: {"text": "article text here", "session_id": "optional"}'
+        })
     try:
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
         text = data.get('text', '').strip()
         session_id = data.get('session_id', '').strip()
         if not text:
@@ -223,7 +253,9 @@ def predict():
         return jsonify({'error': 'Failed to analyze text'}), 500
 
 @app.route('/history', methods=['GET'])
+@app.route('/api/history', methods=['GET'])
 def history():
+
     try:
         session_id = request.args.get('session_id', '').strip()
 
