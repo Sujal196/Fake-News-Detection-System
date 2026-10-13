@@ -1,5 +1,17 @@
+// =============================================================================
+// BACKEND API CONFIGURATION
+// Localhost: Uses relative path '' (calls local Flask server)
+// Production (Vercel): Calls your Render backend URL
+// =============================================================================
+const RENDER_BACKEND_URL = 'https://truthscan-fake-news-detector.onrender.com';
+
+const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? ''
+    : (window.BACKEND_API_URL || RENDER_BACKEND_URL);
+
 const form = document.getElementById('predictionForm');
 const textArea = document.getElementById('newsText');
+
 const charCount = document.getElementById('charCount');
 const charDot = document.getElementById('charDot');
 const btnLoading = document.getElementById('btnLoading');
@@ -92,11 +104,12 @@ form.addEventListener('submit', async (e) => {
     setLoading(true);
 
     try {
-        const response = await fetch('/predict', {
+        const response = await fetch(`${API_BASE}/predict`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text, session_id: sessionId })
         });
+
 
         if (!response.ok) throw new Error('Analysis failed');
 
@@ -400,7 +413,7 @@ async function loadHistory() {
     }
 
     try {
-        const response = await fetch(`/history?session_id=${sessionId}&t=${Date.now()}`, { cache: 'no-store' });
+        const response = await fetch(`${API_BASE}/history?session_id=${sessionId}&t=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) throw new Error('Failed');
 
         const dbData = await response.json();

@@ -13,11 +13,14 @@ from pymongo import MongoClient
 
 from data_preprocessing import TextPreprocessor
 from ml_models import FakeNewsDetector
+from flask_cors import CORS
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
+CORS(app)
 
 detector = None
+
 preprocessor = None
 
 # MongoDB Configuration
