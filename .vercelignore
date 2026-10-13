@@ -1,10 +1,17 @@
-*.csv
+# Python backend files (hosted on Render)
+app.py
+*.py
+requirements.txt
+Procfile
+render.yaml
+models/
 *.pkl
-!models/*.pkl
-train_large_dataset.py
-data_preprocessing.pyc
-ml_models.pyc
+*.csv
 __pycache__/
+.env
 .git/
-.ipynb_checkpoints/
-*.ipynb
+.vscode/
+*.doc
+*.docx
+*.pptx
+*.bat

@@ -193,8 +193,10 @@ def read_from_db(session_id=None):
 
 
 @app.route('/')
+@app.route('/index.html')
 def home():
     return render_template('index.html')
+
 
 @app.route('/favicon.ico')
 def favicon():
