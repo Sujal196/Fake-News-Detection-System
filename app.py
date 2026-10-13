@@ -333,7 +333,13 @@ def about():
 
 @app.errorhandler(404)
 def not_found(error):
-    return jsonify({'error': 'Endpoint not found'}), 404
+    if request.path.startswith('/api') or request.path in ['/predict', '/history', '/health']:
+        return jsonify({'error': 'Endpoint not found'}), 404
+    try:
+        return render_template('index.html'), 200
+    except Exception:
+        return jsonify({'error': 'Endpoint not found'}), 404
+
 
 @app.errorhandler(500)
 def internal_error(error):

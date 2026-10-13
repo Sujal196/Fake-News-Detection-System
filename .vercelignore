@@ -1,17 +1,10 @@
-# Python backend files (hosted on Render)
-app.py
-*.py
-requirements.txt
-Procfile
-render.yaml
-models/
-*.pkl
 *.csv
+train_large_dataset.py
 __pycache__/
-.env
 .git/
 .vscode/
 *.doc
 *.docx
 *.pptx
 *.bat
+.env
