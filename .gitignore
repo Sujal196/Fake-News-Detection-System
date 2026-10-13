@@ -9,4 +9,4 @@ venv/
 ENV/
 *.db
 .vscode/
-MONGODB_URI=mongodb+srv://sujalsahu196_db_user:gs6dbJpo3xWVIozT@drishtix.dzxbcvj.mongodb.net/truthscan?retryWrites=true&w=majority&appName=DrishtiX
+
