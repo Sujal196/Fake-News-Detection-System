@@ -1,6 +1,6 @@
 # TruthScan — AI Fake News Detection System
 
-TruthScan is an AI-powered web application that detects and classifies fake news in real time using Natural Language Processing (NLP) and Machine Learning. Trained on over 44,000 news articles, it achieves a 99.4% accuracy rate to help users verify information quickly and reliably.
+TruthScan is an AI-powered web application that detects and classifies fake news in real time using Natural Language Processing (NLP) and Machine Learning Model. Trained on over 44,000 news articles, it achieves a 99.4% accuracy rate to help users verify information quickly and reliably.
 
 ---
 
