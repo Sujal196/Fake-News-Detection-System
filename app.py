@@ -26,8 +26,7 @@ preprocessor = None
 
 # MongoDB Configuration
 MONGO_URI = os.environ.get(
-    'MONGODB_URI',
-    'mongodb+srv://sujalsahu196_db_user:TyF7BIdAkZasKP9q@drishtix.dzxbcvj.mongodb.net/truthscan?retryWrites=true&w=majority&appName=DrishtiX'
+    'MONGODB_URI'
 )
 MONGO_DB_NAME = os.environ.get('MONGODB_DB_NAME', 'truthscan')
 MONGO_COLLECTION_NAME = os.environ.get('MONGODB_COLLECTION', 'history')
