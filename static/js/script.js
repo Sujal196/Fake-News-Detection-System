@@ -3,7 +3,7 @@
 // Localhost: Uses relative path '' (calls local Flask server)
 // Production (Vercel): Calls your Render backend URL
 // =============================================================================
-const RENDER_BACKEND_URL = 'https://truthscan-fake-news-detector.onrender.com';
+const RENDER_BACKEND_URL = 'https://fake-news-detection-system-8yn3.onrender.com';
 
 const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? ''
