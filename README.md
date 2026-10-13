@@ -2,11 +2,7 @@
 
 TruthScan is an AI-powered web application that detects and classifies fake news in real time using Natural Language Processing (NLP) and Machine Learning Model. Trained on over 44,000 news articles, it achieves a 99.4% accuracy rate to help users verify information quickly and reliably.
 
----
-
-### 🌐 Live Links
-- **Live Demo (Frontend):** [https://fake-news-detection-system-omega.vercel.app/](https://fake-news-detection-system-omega.vercel.app/)
-- **Backend API:** [https://fake-news-detection-system-8yn3.onrender.com](https://fake-news-detection-system-8yn3.onrender.com)
+Link: [https://fake-news-detection-system-gamma.vercel.app/](https://fake-news-detection-system-gamma.vercel.app/)
 
 ---
 
