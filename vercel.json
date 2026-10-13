@@ -1,19 +1,17 @@
 {
-  "version": 2,
-  "builds": [
+  "cleanUrls": true,
+  "rewrites": [
     {
-      "src": "app.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/static/(.*)",
-      "dest": "/static/$1"
+      "source": "/predict",
+      "destination": "https://fake-news-detection-system-8yn3.onrender.com/predict"
     },
     {
-      "src": "/(.*)",
-      "dest": "app.py"
+      "source": "/history",
+      "destination": "https://fake-news-detection-system-8yn3.onrender.com/history"
+    },
+    {
+      "source": "/health",
+      "destination": "https://fake-news-detection-system-8yn3.onrender.com/health"
     }
   ]
 }

@@ -1,3 +1,11 @@
+models/
+app.py
+ml_models.py
+data.py
+data_preprocessing.py
+requirements.txt
+Procfile
+render.yaml
 *.csv
 train_large_dataset.py
 __pycache__/
